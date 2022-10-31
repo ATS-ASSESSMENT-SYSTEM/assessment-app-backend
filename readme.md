@@ -26,7 +26,7 @@
 
 
 ### Question (Developer: Yusuff Adekunle )
-    - Model
+    - Model (Task)
         - category (FK => category )
         - question_text
         - timestamp (date_created and date_updated)
@@ -34,32 +34,38 @@
         - types (Practice, Real)
         - difficulty (easy, intermidiate, experienced )
     
-    - Views
+    - Views (Task)
         - create, edit and delete
         - get a question with choices
         - filter question by type
         - filter question by difficulty
 
 ### Chioces  (Developer: Yusuff Adekunle )
-    - Model
+    - Model (Task)
         - Question (FK)
         - choice_text
         - is_correct
         - timestamp
 
 ### Result (Developer: Tolu Smith )
-    - Models
+    - Models (Task)
         - assessment (FK => assessment)
         - candidate (FK => User )
         - test_category (M2M)
         - timestamps
         - is_active
     
-    - Views
+    - Views (Task)
         - create an instance of result
         - calculate total and send to application server
         - get result for a candidate
         - taking the assessment 
 
 
-
+### System Logs (Developer: Tolu Smith)
+    - Model (Task)
+        - level
+        - timestamp
+        - event
+        - message
+    - Functions (Task)
