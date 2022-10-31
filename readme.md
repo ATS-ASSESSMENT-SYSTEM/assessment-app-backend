@@ -27,4 +27,39 @@
 
 ### Question (Developer: Yusuff Adekunle )
     - Model
-        -
+        - category (FK => category )
+        - question_text
+        - timestamp (date_created and date_updated)
+        - creater (FK => user)
+        - types (Practice, Real)
+        - difficulty (easy, intermidiate, experienced )
+    
+    - Views
+        - create, edit and delete
+        - get a question with choices
+        - filter question by type
+        - filter question by difficulty
+
+### Chioces  (Developer: Yusuff Adekunle )
+    - Model
+        - Question (FK)
+        - choice_text
+        - is_correct
+        - timestamp
+
+### Result (Developer: Tolu Smith )
+    - Models
+        - assessment (FK => assessment)
+        - candidate (FK => User )
+        - test_category (M2M)
+        - timestamps
+        - is_active
+    
+    - Views
+        - create an instance of result
+        - calculate total and send to application server
+        - get result for a candidate
+        - taking the assessment 
+
+
+
