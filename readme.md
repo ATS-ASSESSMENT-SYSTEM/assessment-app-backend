@@ -16,6 +16,7 @@
     - Model (Task)
         - assessment (M2M => assessment)
         - name
+        - information
         - timestamp (date_created and date_updated)
         - creater (FK => user)
 
