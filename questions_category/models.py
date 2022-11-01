@@ -2,9 +2,11 @@ from django.db import models
 
 
 # Create your models here.
+from assessment.models import Assessment
+
 
 class Category(models.Model):
-    assessment = models.ForeignKey("Assessment", on_delete=models.CASCADE)
+    assessment = models.ManyToManyField(Assessment, limit_choices_to={'is_delete': False})
     category_info = models.TextField()
     name = models.CharField(max_length=150)
     created_date = models.DateTimeField(auto_now_add=True)
@@ -43,6 +45,3 @@ class Choice(models.Model):
     is_correct = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
-from django.db import models
-
-# Create your models here.
