@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'questions_category',
     'result',
     'system_logs',
-    'rest_framework'
+    'rest_framework',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
