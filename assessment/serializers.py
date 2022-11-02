@@ -1,9 +1,13 @@
-from rest_framework  import serializers
+from rest_framework  import serializers, HyperlinkedIdentityField
 from assessment.models import Assessment
 
-class AssessmentSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=200, null=True)
-    application_type = serializers.CharField(max_length=200, null=True)
-    date_created = serializers.models.DateField(auto_now_add=True)
-    date_updated = serializers.models.DateField(auto_now=True)
-    is_delete = serializers.models.BooleanField(default=False)
+class AssessmentSerializer(serializers.Modelserializer):
+    url = HyperlinkedIdentityField(view_name="", format='html',)
+    
+    class Meta:
+        model = Assessment
+        fields = ("name", "instruction", "application_type", "date_created", "date_updated", "url")
+
+    
+    
+    
