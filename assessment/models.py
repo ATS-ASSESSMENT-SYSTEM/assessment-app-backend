@@ -15,7 +15,7 @@ class Assessment(models.Model):
     application_type = models.CharField(max_length=200)
     date_created = models.DateField(auto_now_add=True)
     date_updated = models.DateField(auto_now=True)
-    is_deleted = models.BooleanField(default=False)
+    is_delete = models.BooleanField(default=False)
     
     objects = models.Manager()
     active_objects = ActiveManager()
