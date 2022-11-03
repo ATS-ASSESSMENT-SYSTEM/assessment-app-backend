@@ -16,7 +16,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+API_PREFIX = 'api/'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('categories/', include('questions_category.urls')),
+    path(f'{API_PREFIX}categories/', include('questions_category.urls')),
 ]
