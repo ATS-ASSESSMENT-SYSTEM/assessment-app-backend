@@ -68,7 +68,6 @@ class QuestionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('The category is not known')
 
     def update(self, instance, validated_data):
-        print(validated_data)
         category_pk = self.context['request'].parser_context.get('kwargs').get('test_category_id')
         category = Category.objects.get(pk=category_pk)
         choices = validated_data.pop('choices')

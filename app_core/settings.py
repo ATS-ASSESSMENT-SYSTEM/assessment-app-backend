@@ -38,12 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'assessment',
     'questions_category',
     'result',
     'system_logs',
-    'rest_framework',
-    'django_filters',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -144,3 +144,4 @@ STATUS_CODES = {
     'success': config('SUCCESS', cast=int),
     "error": config('ERROR', cast=int),
 }
+

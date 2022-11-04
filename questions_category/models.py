@@ -15,6 +15,9 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ('-created_date',)
+
 
 class Question(models.Model):
     TYPES = (
@@ -37,6 +40,9 @@ class Question(models.Model):
 
     def __str__(self):
         return self.question_text
+
+    class Meta:
+        ordering = ('-created_date',)
 
 
 class Choice(models.Model):

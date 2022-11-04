@@ -13,5 +13,5 @@ urlpatterns = [
     path('<int:pk>/questions', QuestionCreateAPIView.as_view(), name='question-create-view'),
     path('<int:test_category_id>/questions/<int:id>', QuestionRetrieveUpdateDeleteAPIView.as_view(), name='question-retrieve-update-view'),
     path('<int:pk>/questionslist', QuestionListAPIView.as_view(), name='question-list-view'),
-    path('choice/<int:pk>', UpdateChoiceAPIView.as_view(), name='update-choice'),
+    path('question/choice/<int:pk>', UpdateChoiceAPIView.as_view(), name='update-choice'),
 ]

@@ -8,6 +8,7 @@ __pycache__/
 *$py.class
 db.sqlite3
 */migrations
+faithenv
 # C extensions
 theme
 settings
