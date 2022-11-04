@@ -38,7 +38,6 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
     lookup_fields = ('assessment_id', 'id')
     renderer_classes = (CustomRenderer,)
     def patch(self, request, assessment_id, id):
-        print(request.META)
         try:
             assessment = Assessment.active_objects.get(id=assessment_id)
             category = Category.objects.get(id=id)
