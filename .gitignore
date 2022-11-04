@@ -9,6 +9,7 @@ __pycache__/
 db.sqlite3
 */migrations
 faithenv
+.env
 # C extensions
 theme
 settings
