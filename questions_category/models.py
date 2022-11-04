@@ -25,7 +25,7 @@ class Question(models.Model):
         ("Real", "Real")
     )
 
-    DIFFICULTS = (
+    DIFFICULTIES = (
         ("Easy", "Easy"),
         ("Intermediate", "Intermediate"),
         ("Experience", "Experience")
@@ -34,7 +34,7 @@ class Question(models.Model):
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
     question_type = models.CharField(max_length=150, choices=TYPES)
-    difficult = models.CharField(max_length=150, choices=DIFFICULTS)
+    difficult = models.CharField(max_length=150, choices=DIFFICULTIES)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
