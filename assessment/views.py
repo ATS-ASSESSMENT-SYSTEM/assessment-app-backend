@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
- 
+from rest_framework.views import APIView
+
 from assessment.models import Assessment
 from assessment.serializers import AssessmentSerializer, CategorySerializer
 from rest_framework import generics
@@ -31,12 +32,12 @@ class CategoryList(generics.ListAPIView):
     def get_queryset(self):
         assessment_pk = self.kwargs.get('pk')
         return Category.objects.filter(assessment__pk=assessment_pk)
-    
 
 class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAPIView):
     queryset = Category.objects.all()
     lookup_fields = ('assessment_id', 'id')
     renderer_classes = (CustomRenderer,)
+
     def patch(self, request, assessment_id, id):
         try:
             assessment = Assessment.active_objects.get(id=assessment_id)
@@ -52,3 +53,6 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
                 category.assessment.remove(assessment)
                 category.save()
                 return Response({'status': 'Success', 'message': 'Category removed'})
+
+
+    

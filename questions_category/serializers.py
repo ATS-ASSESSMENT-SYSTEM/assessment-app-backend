@@ -22,30 +22,36 @@ class CategorySerializer(serializers.ModelSerializer):
             'id': {'read_only': True},
         }
 
+    def validate(self, attrs):
+        category_name = attrs.get('name')
+        if Category.objects.filter(name=category_name).exists():
+            raise serializers.ValidationError('Category with the same name already exist.')
+
+        return attrs
+
 
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
-        fields = ('choice_text', 'is_correct')
+        fields = ('id', 'choice_text', 'is_correct')
 
 
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
 
+    class Meta:
+        model = Question
+        fields = ('id', 'question_text', 'question_type', 'difficult', 'choices')
+
     def validate(self, attrs):
-        print(attrs)
-        choice = attrs.get('choices')
-        if not choice:
+        choices = attrs.get('choices')
+        if not choices:
             raise serializers.ValidationError('Question must have at least 2 choices')
 
-        if len(attrs['choices']) < 2:
+        if len(choices) < 2:
             raise serializers.ValidationError('Choices must be 2 at least')
 
         return attrs
-
-    class Meta:
-        model = Question
-        fields = ('question_text', 'question_type', 'difficult', 'choices')
 
     def create(self, validated_data):
         try:
@@ -56,8 +62,19 @@ class QuestionSerializer(serializers.ModelSerializer):
                                           question_text=validated_data['question_text'],
                                           difficult=validated_data['difficult'])
             for choice in choices:
-                c = Choice.objects.create(question=obj, **choice)
-                print(c)
+                Choice.objects.create(question=obj, **choice)
             return obj
         except Category.DoesNotExist:
-            return None
+            raise serializers.ValidationError('The category is not known')
+
+    def update(self, instance, validated_data):
+        category_pk = self.context['request'].parser_context.get('kwargs').get('test_category_id')
+        category = Category.objects.get(pk=category_pk)
+        choices = validated_data.pop('choices')
+        instance.test_category = category
+        instance.question_text = validated_data['question_text']
+        instance.question_type = validated_data['question_type']
+        instance.difficult = validated_data['difficult']
+        instance.save()
+        return instance
+
