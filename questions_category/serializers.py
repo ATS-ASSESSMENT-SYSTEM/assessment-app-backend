@@ -11,11 +11,13 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    questions = serializers.HyperlinkedIdentityField(view_name='question-list-view', format='html')
+    questions = serializers.HyperlinkedIdentityField(
+        view_name='question-list-view', format='html')
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'category_info', 'questions', 'created_date', 'updated_date')
+        fields = ('id', 'name', 'category_info', 'questions',
+                  'created_date', 'updated_date')
         extra_kwargs = {
             'created_date': {'read_only': True},
             'updated_date': {'read_only': True},
@@ -36,9 +38,10 @@ class QuestionSerializer(serializers.ModelSerializer):
         print(attrs)
         choice = attrs.get('choices')
         if not choice:
-            raise serializers.ValidationError('Question must have at least 2 choices')
+            raise serializers.ValidationError(
+                'Question must have at least 2 choices')
 
-        if len(attrs['choices']) < 2:
+        if len(choice) < 2:
             raise serializers.ValidationError('Choices must be 2 at least')
 
         return attrs
@@ -49,7 +52,8 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            category_pk = self.context['request'].parser_context.get('kwargs').get('pk')
+            category_pk = self.context['request'].parser_context.get(
+                'kwargs').get('pk')
             category = Category.objects.get(pk=category_pk)
             choices = validated_data.pop('choices')
             obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
@@ -57,7 +61,6 @@ class QuestionSerializer(serializers.ModelSerializer):
                                           difficult=validated_data['difficult'])
             for choice in choices:
                 c = Choice.objects.create(question=obj, **choice)
-                print(c)
             return obj
         except Category.DoesNotExist:
             return None

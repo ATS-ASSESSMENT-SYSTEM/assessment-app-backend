@@ -7,11 +7,11 @@ from rest_framework.generics import (
     ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, ListAPIView
 )
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question
 from questions_category.serializers import CategorySerializer, QuestionSerializer
-
-from rest_framework.pagination import PageNumberPagination
 
 
 class StandardPagination(PageNumberPagination):
