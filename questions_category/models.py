@@ -15,6 +15,9 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ('-created_date',)
+
 
 class Question(models.Model):
     TYPES = (
@@ -38,9 +41,12 @@ class Question(models.Model):
     def __str__(self):
         return self.question_text
 
+    class Meta:
+        ordering = ('-created_date',)
+
 
 class Choice(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
     choice_text = models.CharField(max_length=150)
     is_correct = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)

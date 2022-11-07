@@ -1,5 +1,6 @@
 import json
 from rest_framework import serializers
+from django.db.models import Sum
 from django.db.models import Exists
 
 from result.models import Result, Category_Result
@@ -10,13 +11,7 @@ from questions_category.models import Category
 class AssessmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assessment
-        fields = ('name',)
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ('name', 'result')
+        fields = ('name', 'application_type', 'date_created')
 
 
 class CategoryScoreSerializer(serializers.ModelSerializer):
@@ -82,7 +77,31 @@ class ResultSerializer(serializers.ModelSerializer):
         if create_result:
             for dict_element in scores:
                 category_instance = Category.objects.get(name=dict_element['name'])
-                Category_Result.objects.create(
-                    result=create_result, score=dict_element['score'],
-                    category=category_instance)
+                if dict_element['multiple_choice_score']:
+                    Category_Result.objects.create(
+                        result=create_result, score=dict_element['multiple_choice_score'],
+                        category=category_instance)
+
+
+
         return create_result
+
+
+class CandidateResultSerializer(serializers.ModelSerializer):
+    result = serializers.SerializerMethodField()
+    assessment = AssessmentSerializer()
+
+    class Meta:
+        model = Result
+        fields = ('assessment', 'candidate', 'created_date')
+
+    def get_result(self, obj):
+        # result = {}
+        q = Category_Result.objects.filter(result=obj.pk)
+        # result['scores'] = q
+        # result['total'] = q.aggregate(sum=Sum('score'))
+        return q
+
+
+class CandidatesResultSerializer(serializers.ModelSerializer):
+    pass
