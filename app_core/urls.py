@@ -21,5 +21,5 @@ API_PREFIX = 'api/'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path(f'{API_PREFIX}categories/', include('questions_category.urls')),
-    path('assessment/', include('assessment.urls'))
+    path(f'{API_PREFIX}assessment/', include('assessment.urls'))
 ]

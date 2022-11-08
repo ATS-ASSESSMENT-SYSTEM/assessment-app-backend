@@ -1,4 +1,6 @@
+import uuid
 from django.db import models
+from questions_category.models import Category, Question
 # Create your models here.
 
 class ActiveManager(models.Manager):
@@ -15,6 +17,7 @@ class Assessment(models.Model):
     application_type = models.CharField(max_length=200)
     date_created = models.DateField(auto_now_add=True)
     date_updated = models.DateField(auto_now=True)
+    benchmark = models.IntegerField()
     is_delete = models.BooleanField(default=False)
     
     objects = models.Manager()
@@ -26,3 +29,12 @@ class Assessment(models.Model):
     
     class Meta:
         ordering = ["-date_created"]
+        
+        
+class AssessmentSession(models.Model):
+   assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
+   session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+   category = models.ForeignKey(Category, on_delete=models.CASCADE)
+   question_list = models.ManyToManyField(Question)
+   candidate = models.CharField(max_length=200)
+    
