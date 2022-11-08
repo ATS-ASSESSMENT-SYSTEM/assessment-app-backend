@@ -1,14 +1,19 @@
+import datetime
+
 from django.db import models
 
 
 # Create your models here.
-from assessment.models import Assessment
+from django.utils import timezone
+
+# from assessment.models import Assessment
 
 
 class Category(models.Model):
-    assessment = models.ManyToManyField(Assessment, limit_choices_to={'is_delete': False})
+    assessment = models.ManyToManyField('assessment.Assessment', limit_choices_to={'is_delete': False})
     category_info = models.TextField()
     name = models.CharField(max_length=150)
+    test_duration = models.TimeField(default=datetime.time(00, 10, 00))
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
@@ -65,3 +70,4 @@ class OpenEndedAnswer(models.Model):
     answer_text = models.TextField()
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+

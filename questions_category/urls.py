@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     CategoryListCreateAPIView, CategoryRetrieveUpdateDeleteAPIView,
     QuestionCreateAPIView, QuestionListAPIView, QuestionRetrieveUpdateDeleteAPIView,
-    UpdateChoiceAPIView, GenerateRandomQuestions
+    UpdateChoiceAPIView
 )
 
 
@@ -14,5 +14,4 @@ urlpatterns = [
     path('<int:test_category_id>/questions/<int:id>', QuestionRetrieveUpdateDeleteAPIView.as_view(), name='question-retrieve-update-view'),
     path('<int:pk>/questionslist', QuestionListAPIView.as_view(), name='question-list-view'),
     path('question/choice/<int:pk>', UpdateChoiceAPIView.as_view(), name='update-choice'),
-    path('<int:assessment_id>/category/<int:category_id>/questions', GenerateRandomQuestions.as_view(), name='random-question')
 ]
