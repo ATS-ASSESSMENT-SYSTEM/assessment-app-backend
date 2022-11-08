@@ -1,15 +1,21 @@
+import json
 from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
-    ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, ListAPIView, UpdateAPIView
+    ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, ListAPIView, UpdateAPIView, GenericAPIView,
 )
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from assessment.models import Assessment
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
+from .middleware import AESCipherMiddleware
 
 from rest_framework.pagination import PageNumberPagination
 
@@ -57,18 +63,17 @@ class QuestionCreateAPIView(CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        print(serializer)
         if serializer.is_valid():
             serializer.save()
-            print(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            encrypt = AESCipherMiddleware()
+            return Response(encrypt.process_response(serializer.data), status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class QuestionListAPIView(ListAPIView):
     serializer_class = QuestionSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['test_category', 'question_type', 'difficult']
+    filterset_fields = ['test_category', 'question_type', 'difficult', 'questions_categories']
     renderer_classes = (CustomRenderer,)
 
     def get_queryset(self):
@@ -91,3 +96,16 @@ class UpdateChoiceAPIView(UpdateAPIView):
     queryset = Choice.objects.all()
 
 
+class GenerateRandomQuestions(ListCreateAPIView):
+    serializer_class = QuestionSerializer
+    renderer_classes = (CustomRenderer,)
+
+    def get_queryset(self):
+        assessment_id = self.kwargs.get('assessment_id')
+        category_id = self.kwargs.get('category_id')
+        try:
+            assessment = Assessment.objects.get(id=assessment_id)
+            category = Category.objects.get(id=category_id)
+            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[:5]
+        except (Assessment.DoesNotExist, Category.DoesNotExist):
+            raise ValidationError('Assessment or the category does not exist.')
