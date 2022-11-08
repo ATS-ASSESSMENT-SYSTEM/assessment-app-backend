@@ -6,5 +6,5 @@ urlpatterns = [
     path('<int:pk>/', views.AssesmentDetail.as_view(), name='assessment-retrieve-update-view'),
     path('<int:pk>/category', views.CategoryList.as_view(), name='category-list-view'),
     path('<int:assessment_id>/category/<int:id>', views.AddCategoryToAssessmentAPIView.as_view(), name="'add-category"),
-    
+    path('<int:assessment_id>/category/<int:category_id>/questions', views.GenerateRandomQuestions.as_view(), name='random-question'),
 ]

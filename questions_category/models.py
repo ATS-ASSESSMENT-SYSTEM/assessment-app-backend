@@ -2,11 +2,11 @@ from django.db import models
 
 
 # Create your models here.
-from assessment.models import Assessment
+# from assessment.models import Assessment
 
 
 class Category(models.Model):
-    assessment = models.ManyToManyField(Assessment, limit_choices_to={'is_delete': False})
+    assessment = models.ManyToManyField('assessment.Assessment', limit_choices_to={'is_delete': False})
     category_info = models.TextField()
     name = models.CharField(max_length=150)
     created_date = models.DateTimeField(auto_now_add=True)
