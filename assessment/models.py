@@ -18,7 +18,7 @@ class ApplicationType(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_delete = models.BooleanField(default=False)
     
-    bjects = models.Manager()
+    objects = models.Manager()
     active_objects = ActiveManager()
     deleted_objects = DeleteManager()
     
