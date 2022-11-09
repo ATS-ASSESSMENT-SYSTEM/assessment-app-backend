@@ -24,7 +24,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         category_name = attrs.get('name')
-        if Category.objects.filter(name=category_name).exists():
+        if Category.objects.filter(name__iexact=category_name).exists():
             raise serializers.ValidationError('Category with the same name already exist.')
 
         return attrs

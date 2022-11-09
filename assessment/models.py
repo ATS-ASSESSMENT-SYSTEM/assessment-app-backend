@@ -17,7 +17,7 @@ class Assessment(models.Model):
     application_type = models.CharField(max_length=200)
     date_created = models.DateField(auto_now_add=True)
     date_updated = models.DateField(auto_now=True)
-    benchmark = models.IntegerField()
+    benchmark = models.IntegerField(null=True, blank=True)
     is_delete = models.BooleanField(default=False)
     
     objects = models.Manager()
@@ -37,4 +37,6 @@ class AssessmentSession(models.Model):
    category = models.ForeignKey(Category, on_delete=models.CASCADE)
    question_list = models.ManyToManyField(Question)
    candidate = models.CharField(max_length=200)
+
+
     

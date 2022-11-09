@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-lkno=6=ntjrt5b6i1l#!c4@5@076=t*(_s(42p(2u2(ridz+((
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -54,6 +54,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'questions_category.middleware.AESCipherMiddleware',
+    # 'questions_category.middleware.SimpleMiddleware',
 ]
 
 ROOT_URLCONF = 'app_core.urls'
