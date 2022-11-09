@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 
-from assessment.models import Assessment
-from assessment.serializers import AssessmentSerializer, CategorySerializer
+from assessment.models import Assessment, ApplicationType
+from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer
 from rest_framework import generics
 from questions_category.models import Category
 from utils.json_renderer import CustomRenderer
@@ -51,9 +51,12 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
             raise ValidationError('Assessment or The Category does not exist.')
         else:
             if assessment not in category.assessment.all():
-                category.assessment.add(assessment)
-                category.save()
-                return Response({'status': 'Success', 'message': 'Category added successfully.'})
+                if assessment.category_set.count() < 5:
+                    print(assessment.category_set.all().count())
+                    category.assessment.add(assessment)
+                    category.save()
+                    return Response({'status': 'Success', 'message': 'Category added successfully.'})
+                return Response({'status': 'Error', 'message': 'Categories cannot be more than 5 for a assessment.'})
             else:
                 category.assessment.remove(assessment)
                 category.save()
@@ -70,6 +73,21 @@ class GenerateRandomQuestions(generics.ListCreateAPIView):
         try:
             assessment = Assessment.objects.get(id=assessment_id)
             category = Category.objects.get(id=category_id)
-            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[:5]
+            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[
+                   :category.num_of_questions]
         except (Assessment.DoesNotExist, Category.DoesNotExist):
             raise ValidationError('Assessment or the category does not exist.')
+
+
+class ApplicationTypeList(generics.ListCreateAPIView):
+    queryset = ApplicationType.active_objects.all()
+    serializer_class = ApplicationTypeSerializer
+    renderer_classes = (CustomRenderer,)
+
+
+class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ApplicationType.active_objects.all()
+    serializer_class = ApplicationTypeSerializer
+    renderer_classes = (CustomRenderer,)
+
+

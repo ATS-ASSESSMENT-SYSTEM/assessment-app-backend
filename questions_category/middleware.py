@@ -25,7 +25,7 @@ class AESCipherMiddleware(MiddlewareMixin):
         s = json.dumps(response.data)
         r = base64.b64encode(iv + cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
         print(r)
-        return response
+        return json.loads(r)
         # print(vars(response))
         # print(response.data)
         # if response.data.get('results'):

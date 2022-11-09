@@ -46,7 +46,7 @@ class Question(models.Model):
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
     question_type = models.CharField(max_length=150, default='Multi-choices', choices=TYPES)
-    question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES)
+    question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     difficult = models.CharField(max_length=150, choices=DIFFICULTIES)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)

@@ -1,15 +1,17 @@
 from rest_framework.serializers import ModelSerializer, HyperlinkedIdentityField
 from rest_framework import serializers
 from assessment.models import Assessment, AssessmentSession
+from assessment.models import Assessment, ApplicationType, AssessmentSession
+
 from questions_category.models import Category
 
 
 class AssessmentSerializer(ModelSerializer):
-    url = HyperlinkedIdentityField(view_name="category-list-view", format='html', )
+    categories = HyperlinkedIdentityField(view_name="category-list-view", format='html', )
 
     class Meta:
         model = Assessment
-        fields = ("name", "instruction", "application_type", "benchmark", "date_created", "date_updated", "url")
+        fields = ("name", "instruction", "application_type", "benchmark", "date_created", "date_updated", "categories")
 
     extra_kwargs = {
         'created_date': {'read_only': True},
@@ -29,9 +31,11 @@ class AssessmentSerializer(ModelSerializer):
 
 
 class CategorySerializer(ModelSerializer):
+    questions = serializers.HyperlinkedIdentityField(view_name='question-list-view', format='html')
+
     class Meta:
         model = Category
-        fields = ('id', 'name', 'category_info', 'created_date', 'updated_date')
+        fields = ('id', 'name', 'category_info', 'questions', 'created_date', 'updated_date')
         extra_kwargs = {
             'created_date': {'read_only': True},
             'updated_date': {'read_only': True},
@@ -39,10 +43,13 @@ class CategorySerializer(ModelSerializer):
         }
 
 
-class SessionSerializer(serializers.ModelSerializer):
+class ApplicationTypeSerializer(ModelSerializer):
     class Meta:
-        model = AssessmentSession
-        fields = ('assessment', 'category', 'question_list', 'candidate')
+        model = ApplicationType
+        fields = (
+            'title', 'description'
+        )
+
 
 
 
