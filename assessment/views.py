@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 
-from assessment.models import Assessment
-from assessment.serializers import AssessmentSerializer, CategorySerializer
+from assessment.models import Assessment, ApplicationType
+from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer
 from rest_framework import generics
 from questions_category.models import Category
 from utils.json_renderer import CustomRenderer
@@ -70,6 +70,17 @@ class GenerateRandomQuestions(generics.ListCreateAPIView):
             return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[:5]
         except (Assessment.DoesNotExist, Category.DoesNotExist):
             raise ValidationError('Assessment or the category does not exist.')
+        
+class ApplicationTypeList(generics.ListCreateAPIView):
+    queryset = ApplicationType.active_objects.all()
+    serializer_class = ApplicationTypeSerializer
+    renderer_classes = (CustomRenderer,)
+    
+class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = ApplicationType.active_objects.all()
+    serializer_class = ApplicationTypeSerializer
+    renderer_classes = (CustomRenderer,)
+    
 
 
     

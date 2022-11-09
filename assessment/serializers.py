@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer, HyperlinkedIdentityField
 from rest_framework import serializers
-from assessment.models import Assessment
+from assessment.models import Assessment, ApplicationType, AssessmentSession
 from questions_category.models import Category
 
 
@@ -18,7 +18,7 @@ class AssessmentSerializer(ModelSerializer):
     
     def validate(self, attrs):
         assessment_name = attrs.get('name')
-        if Assessment.objects.filter(name=assessment_name).exists():
+        if Assessment.objects.filter(name__iexact=assessment_name).exists():
             raise serializers.ValidationError('Assessment with the same name already exist.')
         return attrs
     
@@ -37,4 +37,16 @@ class CategorySerializer(ModelSerializer):
             'updated_date': {'read_only': True},
             'id': {'read_only': True},
         }
-    
+
+class ApplicationTypeSerializer(ModelSerializer):
+
+    class Meta:
+        model = ApplicationType
+        fields = (
+            'title', 'description', 'created_at'
+        )
+
+class AssessmentSessionSerializer(ModelSerializer):
+    class Meta:
+        model = AssessmentSession  
+        fields = '__field__'
