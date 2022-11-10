@@ -9,13 +9,18 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 
 from result.models import Result, Category_Result
-from .api.serializers import ResultSerializer, CandidateResultSerializer
+from .api.serializers import ResultSerializer, CandidateResultSerializer, SessionAnswerSerializer, SessionProcessorSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
 
 
 class AddResultAPIView(CreateAPIView):
     serializer_class = ResultSerializer
+    renderer_classes = (CustomRenderer,)
+
+
+class AddResultSummaryAPIView(APIView):
+    serializer_class = ''
     renderer_classes = (CustomRenderer,)
 
 
@@ -35,5 +40,22 @@ class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     #     result['scores'] = q
     #     result['total'] = q.aggregate(sum=Sum('score'))
     #     return result
+
+
+class SessionAnswerAPIView(CreateAPIView):
+    serializer_class = SessionAnswerSerializer
+    renderer_classes = (CustomRenderer,)
+
+
+class SessionProcessorAPIView(APIView):
+    serializer_class = SessionProcessorSerializer
+    renderer_classes = (CustomRenderer,)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

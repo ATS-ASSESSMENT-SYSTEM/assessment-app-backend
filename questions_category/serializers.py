@@ -16,8 +16,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'category_info', 'questions',
-                  'created_date', 'updated_date')
+        fields = ('id', 'name', 'category_info', 'questions', 'test_duration', 'created_date', 'updated_date')
+
         extra_kwargs = {
             'created_date': {'read_only': True},
             'updated_date': {'read_only': True},
@@ -43,15 +43,25 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'difficult', 'choices')
+        fields = ('id', 'question_text', 'question_type', 'difficult', 'question_categories', 'choices')
 
     def validate(self, attrs):
         choices = attrs.get('choices')
-        if not choices:
-            raise serializers.ValidationError('Question must have at least 2 choices')
+        category_pk = self.context['request'].parser_context.get('kwargs').get('pk')
 
-        if len(choices) < 2:
-            raise serializers.ValidationError('Choices must be 2 at least')
+        if attrs['question_type'] == 'Multi-choices':
+            if not choices:
+                raise serializers.ValidationError('Question must have at least 2 choices')
+
+            if len(choices) < 2:
+                raise serializers.ValidationError('Choices must be 2 at least')
+
+        if attrs['question_type'] == 'Open-ended':
+            if choices:
+                raise serializers.ValidationError('Open ended question have no choices')
+
+        if Question.objects.filter(question_text=attrs['question_text'], test_category__pk=category_pk).exists():
+            raise serializers.ValidationError('The question already exist in the category.')
 
         return attrs
 
@@ -60,12 +70,20 @@ class QuestionSerializer(serializers.ModelSerializer):
             category_pk = self.context['request'].parser_context.get(
                 'kwargs').get('pk')
             category = Category.objects.get(pk=category_pk)
-            choices = validated_data.pop('choices')
+            choices = validated_data.get('choices')
+            if choices:
+                obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
+                                              question_categories=validated_data['question_categories'],
+                                              question_text=validated_data['question_text'],
+                                              difficult=validated_data['difficult'])
+                for choice in choices:
+                    Choice.objects.create(question=obj, **choice)
+                return obj
             obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
+                                          question_categories=validated_data['question_categories'],
                                           question_text=validated_data['question_text'],
                                           difficult=validated_data['difficult'])
-            for choice in choices:
-                Choice.objects.create(question=obj, **choice)
+
             return obj
         except Category.DoesNotExist:
             raise serializers.ValidationError('The category is not known')
@@ -77,6 +95,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         instance.test_category = category
         instance.question_text = validated_data['question_text']
         instance.question_type = validated_data['question_type']
+        instance.question_categories = validated_data['question_categories']
         instance.difficult = validated_data['difficult']
         instance.save()
         return instance

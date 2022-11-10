@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 
 from assessment.models import Assessment
 from assessment.serializers import AssessmentSerializer, CategorySerializer
@@ -10,6 +11,8 @@ from questions_category.models import Category
 from utils.json_renderer import CustomRenderer
 
 from questions_category.views import MultipleFieldLookupMixin
+from questions_category.serializers import QuestionSerializer
+from questions_category.models import Question
 
 
 # Create your views here.
@@ -55,3 +58,19 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
                 category.assessment.remove(assessment)
                 category.save()
                 return Response({'status': 'Success', 'message': 'Category removed'})
+
+
+class GenerateRandomQuestions(generics.ListCreateAPIView):
+    serializer_class = QuestionSerializer
+    renderer_classes = (CustomRenderer,)
+
+    def get_queryset(self):
+        assessment_id = self.kwargs.get('assessment_id')
+        category_id = self.kwargs.get('category_id')
+        try:
+            assessment = Assessment.objects.get(id=assessment_id)
+            category = Category.objects.get(id=category_id)
+            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[
+                   :5]
+        except (Assessment.DoesNotExist, Category.DoesNotExist):
+            raise ValidationError('Assessment or the category does not exist.')
