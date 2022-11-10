@@ -49,9 +49,11 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
             raise ValidationError('Assessment or The Category does not exist.')
         else:
             if assessment not in category.assessment.all():
-                category.assessment.add(assessment)
-                category.save()
-                return Response({'status': 'Success', 'message': 'Category added successfully.'})
+                if assessment.category_set.count() < 5:
+                    category.assessment.add(assessment)
+                    category.save()
+                    return Response({'status': 'Success', 'message': 'Category added successfully.'})
+                return Response({'status': 'Error', 'message': 'Categories cannot be more than 5 for a assessment.'})
             else:
                 category.assessment.remove(assessment)
                 category.save()
@@ -61,13 +63,14 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
 class GenerateRandomQuestions(generics.ListCreateAPIView):
     serializer_class = QuestionSerializer
     renderer_classes = (CustomRenderer,)
+    
     def get_queryset(self):
         assessment_id = self.kwargs.get('assessment_id')
         category_id = self.kwargs.get('category_id')
         try:
             assessment = Assessment.objects.get(id=assessment_id)
             category = Category.objects.get(id=category_id)
-            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[:5]
+            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[:assessment.num_of_questions]
         except (Assessment.DoesNotExist, Category.DoesNotExist):
             raise ValidationError('Assessment or the category does not exist.')
         
