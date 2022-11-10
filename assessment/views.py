@@ -15,26 +15,28 @@ from questions_category.serializers import QuestionSerializer
 from questions_category.models import Question
 
 
-
 # Create your views here.
 
 class AssessmentList(generics.ListCreateAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
-    
+
+
 class AssesmentDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
-    
+
+
 class CategoryList(generics.ListAPIView):
     serializer_class = CategorySerializer
     renderer_classes = (CustomRenderer,)
-    
+
     def get_queryset(self):
         assessment_pk = self.kwargs.get('pk')
         return Category.objects.filter(assessment__pk=assessment_pk)
+
 
 class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAPIView):
     queryset = Category.objects.all()
@@ -50,6 +52,7 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
         else:
             if assessment not in category.assessment.all():
                 if assessment.category_set.count() < 5:
+                    print(assessment.category_set.all().count())
                     category.assessment.add(assessment)
                     category.save()
                     return Response({'status': 'Success', 'message': 'Category added successfully.'})
@@ -58,11 +61,12 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
                 category.assessment.remove(assessment)
                 category.save()
                 return Response({'status': 'Success', 'message': 'Category removed'})
-  
-            
+
+
 class GenerateRandomQuestions(generics.ListCreateAPIView):
     serializer_class = QuestionSerializer
     renderer_classes = (CustomRenderer,)
+
     
     def get_queryset(self):
         assessment_id = self.kwargs.get('assessment_id')
@@ -70,20 +74,21 @@ class GenerateRandomQuestions(generics.ListCreateAPIView):
         try:
             assessment = Assessment.objects.get(id=assessment_id)
             category = Category.objects.get(id=category_id)
-            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[:assessment.num_of_questions]
+            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[
+                   :category.num_of_questions]
         except (Assessment.DoesNotExist, Category.DoesNotExist):
             raise ValidationError('Assessment or the category does not exist.')
-        
+
+
 class ApplicationTypeList(generics.ListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    
+
+
 class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    
 
 
-    

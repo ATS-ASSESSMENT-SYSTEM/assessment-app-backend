@@ -1,4 +1,6 @@
 import uuid
+
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from questions_category.models import Category, Question
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -57,4 +59,4 @@ class AssessmentSession(models.Model):
    category = models.ForeignKey(Category, on_delete=models.CASCADE)
    question_list = models.ManyToManyField(Question)
    candidate = models.CharField(max_length=200)
-   
+

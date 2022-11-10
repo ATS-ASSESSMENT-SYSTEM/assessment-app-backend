@@ -4,6 +4,9 @@ from django.db import models
 
 
 # Create your models here.
+from django.utils import timezone
+
+
 # from assessment.models import Assessment
 
 
@@ -24,9 +27,14 @@ class Category(models.Model):
 
 
 class Question(models.Model):
-    TYPES = (
+    QUESTION_CATEGORIES = (
         ("Practice", "Practice"),
         ("Real", "Real")
+    )
+
+    TYPES = (
+        ("Multi-choices", "Multi-choices"),
+        ("Open-ended", "Open-ended")
     )
 
     DIFFICULTIES = (
@@ -37,7 +45,8 @@ class Question(models.Model):
 
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
-    question_type = models.CharField(max_length=150, choices=TYPES)
+    question_type = models.CharField(max_length=150, default='Multi-choices', choices=TYPES)
+    question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     difficult = models.CharField(max_length=150, choices=DIFFICULTIES)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
@@ -51,7 +60,16 @@ class Question(models.Model):
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
-    choice_text = models.CharField(max_length=150)
+    choice_text = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+
+
+class OpenEndedAnswer(models.Model):
+    question = models.ForeignKey(Question, related_name="answer", on_delete=models.CASCADE)
+    candidate = models.CharField(max_length=150, null=True, blank=True)
+    answer_text = models.TextField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
+
