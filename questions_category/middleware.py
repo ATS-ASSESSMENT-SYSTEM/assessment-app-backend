@@ -1,14 +1,13 @@
 import base64
-import json
 import hashlib
+import json
 
 import rest_framework.parsers
-from rest_framework.response import Response
+from Crypto import Random
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 from django.utils.deprecation import MiddlewareMixin
-
-from Cryptodome import Random
-from Cryptodome.Cipher import AES
-from Cryptodome.Util.Padding import pad, unpad
+from rest_framework.response import Response
 
 
 class AESCipherMiddleware(MiddlewareMixin):
