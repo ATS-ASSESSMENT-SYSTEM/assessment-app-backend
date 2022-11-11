@@ -22,6 +22,10 @@ class AssessmentSerializer(ModelSerializer):
         assessment_name = attrs.get('name')
         if Assessment.objects.filter(name__iexact=assessment_name).exists():
             raise serializers.ValidationError('Assessment with the same name already exist.')
+
+        if not attrs.get('instruction'):
+            raise serializers.ValidationError('You must provide instruction for an assessment.')
+
         return attrs
 
     def validate_benchmark(self, value):
@@ -51,5 +55,5 @@ class ApplicationTypeSerializer(ModelSerializer):
         )
 
 
-
-
+class StartAssessmentSerializer(serializers.Serializer):
+    applicant_id = serializers.CharField()

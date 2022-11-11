@@ -35,7 +35,10 @@ class MultipleFieldLookupMixin:
             if self.kwargs.get(field):  # Ignore empty fields.
                 filter[field] = self.kwargs[field]
                 print(filter[field])
+                print(queryset)
         obj = get_object_or_404(queryset, **filter)  # Lookup the object
+        print(obj)
+        print(filter)
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -91,6 +94,11 @@ class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, RetrieveUpda
         return Question.objects.filter(test_category__pk=category_id)
 
 
-class UpdateChoiceAPIView(UpdateAPIView):
+class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = ChoiceSerializer
-    queryset = Choice.objects.all()
+    renderer_classes = (CustomRenderer,)
+    lookup_fields = ('question_id', 'id')
+
+    def get_queryset(self):
+        question_id = self.kwargs.get('question_id')
+        return Choice.objects.filter(question_id=question_id)
