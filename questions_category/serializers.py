@@ -58,7 +58,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             if choices:
                 raise serializers.ValidationError('Open ended question have no choices')
 
-        if Question.objects.filter(question_text=attrs.get('question_text'), test_category__pk=category_pk).exists():
+        if Question.objects.filter(question_text__iexact=attrs.get('question_text'), test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
         return attrs
