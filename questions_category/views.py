@@ -102,3 +102,6 @@ class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView
     def get_queryset(self):
         question_id = self.kwargs.get('question_id')
         return Choice.objects.filter(question_id=question_id)
+    
+
+

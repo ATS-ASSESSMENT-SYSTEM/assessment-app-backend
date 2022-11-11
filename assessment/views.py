@@ -89,7 +89,6 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                                                             candidate=serializer.data['applicant_id'])
                     for question in category.question_set.all():
                         new_session.question_list.add(question)
-
             except (Assessment.DoesNotExist, Category.DoesNotExist):
                 raise ValidationError('Assessment or the category does not exist.')
             else:

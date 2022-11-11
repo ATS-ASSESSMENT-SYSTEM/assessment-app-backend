@@ -3,6 +3,7 @@ import uuid
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from questions_category.models import Category, Question
+from django.core.validators import MaxValueValidator, MinValueValidator
 # Create your models here.
 
 class ActiveManager(models.Manager):

@@ -26,6 +26,9 @@ class AssessmentSerializer(ModelSerializer):
         if not attrs.get('instruction'):
             raise serializers.ValidationError('You must provide instruction for an assessment.')
 
+        if not attrs.get('instruction'):
+            raise serializers.ValidationError('You must provide instruction for an assessment.')
+
         return attrs
 
     def validate_benchmark(self, value):
@@ -57,3 +60,4 @@ class ApplicationTypeSerializer(ModelSerializer):
 
 class StartAssessmentSerializer(serializers.Serializer):
     applicant_id = serializers.CharField()
+
