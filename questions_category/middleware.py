@@ -7,7 +7,7 @@ from django.utils.deprecation import MiddlewareMixin
 import rest_framework.parsers
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from Cryptodome.Cipher import Random
+from Cryptodome import Random
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 
