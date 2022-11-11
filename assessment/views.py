@@ -22,27 +22,27 @@ class AssessmentList(generics.ListCreateAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
-
-
+    
+    
 class AssesmentDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
-
-
+    
+    
 class CategoryList(generics.ListAPIView):
     serializer_class = CategorySerializer
     renderer_classes = (CustomRenderer,)
-
+    
     def get_queryset(self):
         assessment_pk = self.kwargs.get('pk')
         return Category.objects.filter(assessment__pk=assessment_pk)
-
-
+    
+    
 class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
     queryset = Category.objects.all()
     renderer_classes = (CustomRenderer,)
-
+    
     def patch(self, request, assessment_id, id):
         try:
             assessment = Assessment.active_objects.get(id=assessment_id)
@@ -61,8 +61,8 @@ class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
                 category.assessment.remove(assessment)
                 category.save()
                 return Response({'status': 'Success', 'message': 'Category removed'})
-
-
+            
+            
 class GenerateRandomQuestions(generics.CreateAPIView):
     serializer_class = StartAssessmentSerializer
     renderer_classes = (CustomRenderer,)
@@ -97,14 +97,14 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                 print(q)
                 return Response(q.data, status=status.HTTP_200_OK)
         return Response({'error': serializer.errors})
-
-
+    
+    
 class ApplicationTypeList(generics.ListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-
-
+    
+    
 class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
