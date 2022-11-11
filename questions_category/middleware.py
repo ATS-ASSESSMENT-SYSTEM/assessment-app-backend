@@ -1,13 +1,15 @@
 import base64
-import hashlib
 import json
+import hashlib
+
+from django.utils.deprecation import MiddlewareMixin
 
 import rest_framework.parsers
-from Crypto import Random
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-from django.utils.deprecation import MiddlewareMixin
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from Cryptodome.Cipher import Random
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import pad, unpad
 
 
 class AESCipherMiddleware(MiddlewareMixin):
@@ -20,11 +22,16 @@ class AESCipherMiddleware(MiddlewareMixin):
         iv = b'\xe6C\x03\xbe\xe4\x84_\xc5%g`\xd5\xfc\xcd\xd2+'
         cipher = AES.new(key, AES.MODE_CBC, iv)
         print(response)
+        print(vars(response))
         print(response.data)
         s = json.dumps(response.data)
         r = base64.b64encode(iv + cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
-        print(r)
-        return json.loads(r)
+        response = Response({'data': r})
+        response.accepted_renderer = JSONRenderer()
+        response.accepted_media_type = "application/json"
+        response.renderer_context = {}
+        response.render()
+        return response
         # print(vars(response))
         # print(response.data)
         # if response.data.get('results'):

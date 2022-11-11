@@ -4,9 +4,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 
-from assessment.models import Assessment, ApplicationType
-from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer
-from rest_framework import generics
+from assessment.models import Assessment, ApplicationType, AssessmentSession
+from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer, \
+    StartAssessmentSerializer
+from rest_framework import generics, status
 from questions_category.models import Category
 from utils.json_renderer import CustomRenderer
 
@@ -38,9 +39,8 @@ class CategoryList(generics.ListAPIView):
         return Category.objects.filter(assessment__pk=assessment_pk)
 
 
-class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAPIView):
+class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
     queryset = Category.objects.all()
-    lookup_fields = ('assessment_id', 'id')
     renderer_classes = (CustomRenderer,)
 
     def patch(self, request, assessment_id, id):
@@ -63,21 +63,40 @@ class AddCategoryToAssessmentAPIView(MultipleFieldLookupMixin, generics.UpdateAP
                 return Response({'status': 'Success', 'message': 'Category removed'})
 
 
-class GenerateRandomQuestions(generics.ListCreateAPIView):
-    serializer_class = QuestionSerializer
+class GenerateRandomQuestions(generics.CreateAPIView):
+    serializer_class = StartAssessmentSerializer
     renderer_classes = (CustomRenderer,)
 
     
-    def get_queryset(self):
-        assessment_id = self.kwargs.get('assessment_id')
-        category_id = self.kwargs.get('category_id')
-        try:
-            assessment = Assessment.objects.get(id=assessment_id)
-            category = Category.objects.get(id=category_id)
-            return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[
-                   :category.num_of_questions]
-        except (Assessment.DoesNotExist, Category.DoesNotExist):
-            raise ValidationError('Assessment or the category does not exist.')
+    def post(self, request, assessment_id, category_id):
+        serializer = self.get_serializer(data=request.data)
+        print(assessment_id)
+        print(category_id)
+        if serializer.is_valid():
+            try:
+                assessment = Assessment.objects.get(id=assessment_id)
+                print(assessment)
+                category = Category.objects.get(id=category_id)
+                print(category)
+                session = AssessmentSession.objects.filter(assessment=assessment, category=category,
+                                                    candidate=serializer.data.get('applicant_id'))
+                if session.exists():
+                    questions = session.first().question_list.all()
+                else:
+                    questions = Question.objects.filter(test_category__assessment=assessment,
+                                                        test_category=category).order_by('?')[:category.num_of_questions]
+                    new_session = AssessmentSession.objects.create(assessment=assessment, category=category,
+                                                            candidate=serializer.data['applicant_id'])
+                    for question in category.question_set.all():
+                        new_session.question_list.add(question)
+            except (Assessment.DoesNotExist, Category.DoesNotExist):
+                raise ValidationError('Assessment or the category does not exist.')
+            else:
+                print(questions)
+                q = QuestionSerializer(questions, many=True)
+                print(q)
+                return Response(q.data, status=status.HTTP_200_OK)
+        return Response({'error': serializer.errors})
 
 
 class ApplicationTypeList(generics.ListCreateAPIView):
