@@ -7,9 +7,12 @@ from rest_framework.generics import (
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 
-from result.models import Result, Category_Result
-from .api.serializers import ResultSerializer, CandidateResultSerializer, SessionAnswerSerializer, SessionProcessorSerializer
+from result.models import Result, Category_Result, AssessmentImages
+from assessment.models import AssessmentSession
+from .api.serializers import ResultSerializer, CandidateResultSerializer, SessionAnswerSerializer, \
+    SessionProcessorSerializer, AssessmentImageSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
 
@@ -56,6 +59,29 @@ class SessionProcessorAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AssessmentProcessorAPIView(APIView):
+    renderer_classes = (CustomRenderer,)
+
+
+class AssessmentImagesAPIView(APIView):
+    serializer_class = AssessmentImageSerializer
+    renderer_classes = (CustomRenderer,)
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            session = AssessmentSession.objects.get(session=request.data.session)
+            session_images = AssessmentImages(assessment=session.assessment,
+                                              category=session.category,
+                                              candidate=session.candidate,
+                                              images=request.data.get('image')
+                                              )
+            session_images.save()
+            return Response(serializer.data, status=status.HTTP_201_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

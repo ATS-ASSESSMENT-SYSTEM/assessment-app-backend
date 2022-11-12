@@ -5,7 +5,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 from django.db.models import Exists
 
-from result.models import Result, Category_Result, Session_Answer
+from result.models import Result, Category_Result, Session_Answer, AssessmentImages
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, OpenEndedAnswer
 
@@ -212,7 +212,7 @@ class SessionProcessorSerializer(serializers.Serializer):
                 result = Result.objects.filter(assessment=session_instance.assessment,
                                                candidate=session_instance.candidate).first()
                 print(result)
-                if result :
+                if result:
                     section_category = Category_Result.objects.filter(
                         result=result, category=session_instance.category,
                     )
@@ -232,9 +232,34 @@ class SessionProcessorSerializer(serializers.Serializer):
         result, created = Result.objects.get_or_create(assessment=session_instance.assessment,
                                                        candidate=session_instance.candidate)
         correct_score = Session_Answer.objects.filter(session=session_instance, question_type='Multi-choice',
-                                                      is_correct=True).count()
+                                                      is_correct=True)
         session_category = Category_Result(result=result, category=session_instance.category, status='TAKEN',
-                                           score=correct_score
+                                           score=correct_score.count()
                                            )
         session_category.save()
+        correct_score.delete()
+        session_instance.delete()
+
         return validated_data
+
+
+class AssessmentProcessorSerializer(serializers.Serializer):
+    pass
+
+
+class SessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssessmentSession
+        field = ('session_id',)
+
+
+class AssessmentImageSerializer(serializers.ModelSerializer):
+    session_id = SessionSerializer(write_only=True)
+
+    class Meta:
+        model = AssessmentImages
+        field = ('images', 'session_id')
+
+
+
+

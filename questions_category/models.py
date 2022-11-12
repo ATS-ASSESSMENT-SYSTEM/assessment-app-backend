@@ -14,6 +14,7 @@ class Category(models.Model):
     category_info = models.TextField()
     name = models.CharField(max_length=150)
     test_duration = models.TimeField(default=datetime.time(00, 10, 00))
+    num_of_questions = models.IntegerField(default=10)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
