@@ -40,10 +40,7 @@ class Assessment(models.Model):
     application_type = models.ForeignKey(ApplicationType, on_delete=models.CASCADE)
     date_created = models.DateField(auto_now_add=True)
     date_updated = models.DateField(auto_now=True)
-    benchmark = models.IntegerField(default=0, validators=[
-        MaxValueValidator(100),
-        MinValueValidator(0)
-    ])
+    benchmark = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     is_delete = models.BooleanField(default=False)
 
     objects = models.Manager()

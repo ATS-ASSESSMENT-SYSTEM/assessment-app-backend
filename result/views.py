@@ -12,7 +12,7 @@ from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 from result.models import Result, Category_Result, AssessmentImages
 from assessment.models import AssessmentSession
 from .api.serializers import ResultSerializer, CandidateResultSerializer, SessionAnswerSerializer, \
-    SessionProcessorSerializer, AssessmentImageSerializer
+    SessionProcessorSerializer, AssessmentImageSerializer, ResultListInfoSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
 
@@ -84,4 +84,10 @@ class AssessmentImagesAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ResultLIstAPIView(ListAPIView):
+    renderer_classes = (CustomRenderer,)
+    serializer_class = ResultListInfoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filter_fields = ['status', 'assessment']
 

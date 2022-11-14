@@ -23,7 +23,7 @@ class Result(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    status = models.CharField(max_length=150, choices='Not_taken')
+    status = models.CharField(max_length=150, choices=STATUS, default='Not_taken')
     total = models.IntegerField(default=0)
 
     def __str__(self) -> str:

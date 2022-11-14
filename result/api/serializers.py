@@ -5,7 +5,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 from django.db.models import Exists
 
-from result.models import Result, Category_Result, Session_Answer, AssessmentImages
+from result.models import Result, Category_Result, Session_Answer, AssessmentImages, Result_Info
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, OpenEndedAnswer
 
@@ -261,5 +261,48 @@ class AssessmentImageSerializer(serializers.ModelSerializer):
         field = ('images', 'session_id')
 
 
+class ApplicantSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    candidate_id = serializers.CharField(max_length=100)
+    email = serializers.CharField(max_length=100)
+
+
+class ResultInfoSerializer(serializers.ModelSerializer):
+    applicant = ApplicantSerializer(write_only=True)
+    assessment_id = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = Result_Info
+        field = ('location', 'device', 'enabled_webcam', 'applicant')
+
+    def validate(self, attrs):
+        try:
+            Assessment.objects.get(pk=attrs['assessment_id'])
+        except Assessment.DoesNotExist:
+            raise serializers.ValidationError('Please Provide a valid assessment id ')
+
+    def create(self, validated_data):
+        candidate_id = validated_data.pop('applicant')
+        assessment_id = validated_data.pop('assessment')
+        assessment = Assessment.objects.get(pk=assessment_id)
+        result = Result(assessment=assessment, candidate=candidate_id['candidate_id'])
+        result.save()
+        new_info = Result_Info(result=result, **validated_data)
+        new_info.save()
+        return new_info
+
+
+class ResultListInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Result_Info
+        field = ('location', 'device', 'enabled_webcam', 'applicant_info')
+
+
+class ResultListSerializer(serializers.ModelSerializer):
+    result_info = ResultListInfoSerializer(read_only=True)
+
+    class Meta:
+        model = Result
+        field = ['candidate', 'status', 'created_date', 'is_active' 'result_info']
 
 
