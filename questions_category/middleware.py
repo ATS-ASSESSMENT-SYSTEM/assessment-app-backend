@@ -21,17 +21,18 @@ class AESCipherMiddleware(MiddlewareMixin):
         key = b"VE\xeb6:^\x9bf\xe1\x8b\x8a\xc5\xbe'\xc2\xea"
         iv = b'\xe6C\x03\xbe\xe4\x84_\xc5%g`\xd5\xfc\xcd\xd2+'
         cipher = AES.new(key, AES.MODE_CBC, iv)
-        print(response)
-        print(vars(response))
-        print(response.data)
-        s = json.dumps(response.data)
-        r = base64.b64encode(iv + cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
-        response = Response({'data': r})
-        response.accepted_renderer = JSONRenderer()
-        response.accepted_media_type = "application/json"
-        response.renderer_context = {}
-        response.render()
-        return response
+        # print(response)
+        # print(vars(response))
+        # print(response.data)
+        if response.data:
+            s = json.dumps(response.data)
+            r = base64.b64encode(iv + cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
+            response = Response({'data': r})
+            response.accepted_renderer = JSONRenderer()
+            response.accepted_media_type = "application/json"
+            response.renderer_context = {}
+            response.render()
+            return response
         # print(vars(response))
         # print(response.data)
         # if response.data.get('results'):
@@ -80,11 +81,24 @@ class AESCipherMiddleware(MiddlewareMixin):
         #     print(vars(response))
         #     return Response(response)
         
-    # def process_request(self, enc):
-    #     key = b"VE\xeb6:^\x9bf\xe1\x8b\x8a\xc5\xbe'\xc2\xea"
-    #     cipher = AES.new(AES.MODE_CBC)
-    #     ct_bytes = cipher.decrypt(unpad(AES.block_size))
-    #     return base64.b64encode(ct_bytes)
+    def process_request(self, request):
+        try:
+            # print(vars(request))
+            print(type(request.body.decode()))
+            b64 = json.loads(request.body.decode())
+            iv = base64.b64decode(b64['iv'])
+            key = b"VE\xeb6:^\x9bf\xe1\x8b\x8a\xc5\xbe'\xc2\xea"
+            cipher = AES.new(key, AES.MODE_CBC, iv)
+            data = base64.b64decode(iv + cipher.decrypt(unpad(request.data, AES.block_size))).decode('utf-8')
+            response = Response({'data': data})
+            response.accepted_renderer = JSONRenderer()
+            response.accepted_media_type = "application/json"
+            response.renderer_context = {}
+            response.render()
+            return response
+        except (ValueError, KeyError):
+            print("Incorrect decryption.")
+
     
     
 class SimpleMiddleware:

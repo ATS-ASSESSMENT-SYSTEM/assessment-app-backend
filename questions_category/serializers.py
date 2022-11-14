@@ -35,6 +35,10 @@ class ChoiceSerializer(serializers.ModelSerializer):
         model = Choice
         fields = ('id', 'choice_text', 'is_correct')
 
+# class SessionAnswerSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = S
+
 
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
