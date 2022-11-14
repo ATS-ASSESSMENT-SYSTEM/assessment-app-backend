@@ -37,8 +37,8 @@ class Assessment(models.Model):
     name = models.CharField(max_length=200)
     instruction = models.TextField(null=True, blank=False)
     application_type = models.ForeignKey(ApplicationType, on_delete=models.CASCADE)
-    date_created = models.DateField(auto_now_add=True)
-    date_updated = models.DateField(auto_now=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
     benchmark = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
     is_delete = models.BooleanField(default=False)
     
@@ -59,4 +59,10 @@ class AssessmentSession(models.Model):
    category = models.ForeignKey(Category, on_delete=models.CASCADE)
    question_list = models.ManyToManyField(Question)
    candidate = models.CharField(max_length=200)
-
+   date_created = models.DateTimeField(auto_now_add=True, null=True)
+   date_updated = models.DateTimeField(auto_now=True, null=True)
+   device = models.CharField(max_length=200, null=True)
+   browser = models.CharField(max_length=200, null=True)
+   location = models.CharField(max_length=200, null=True)
+   enable_webcam = models.BooleanField(default=False, null=True) 
+   full_screen_active = models.BooleanField(default=False, null=True)
