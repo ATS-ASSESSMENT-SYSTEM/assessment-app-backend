@@ -2,7 +2,6 @@ import datetime
 
 from django.db import models
 
-
 # Create your models here.
 from django.utils import timezone
 
@@ -33,7 +32,7 @@ class Question(models.Model):
     )
 
     TYPES = (
-        ("Multi-choices", "Multi-choices"),
+        ("Multi-choice", "Multi-choice"),
         ("Open-ended", "Open-ended")
     )
 
@@ -45,7 +44,7 @@ class Question(models.Model):
 
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
-    question_type = models.CharField(max_length=150, default='Multi-choices', choices=TYPES)
+    question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
     question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     difficult = models.CharField(max_length=150, choices=DIFFICULTIES)
     created_date = models.DateTimeField(auto_now_add=True)
@@ -65,6 +64,9 @@ class Choice(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.choice_text
+
 
 class OpenEndedAnswer(models.Model):
     question = models.ForeignKey(Question, related_name="answer", on_delete=models.CASCADE)
@@ -73,4 +75,3 @@ class OpenEndedAnswer(models.Model):
     is_correct = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
-

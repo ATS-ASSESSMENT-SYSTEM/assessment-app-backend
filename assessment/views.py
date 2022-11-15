@@ -67,7 +67,6 @@ class GenerateRandomQuestions(generics.CreateAPIView):
     serializer_class = StartAssessmentSerializer
     renderer_classes = (CustomRenderer,)
 
-
     def post(self, request, assessment_id, category_id):
         serializer = self.get_serializer(data=request.data)
         print(assessment_id)
@@ -109,3 +108,4 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
+

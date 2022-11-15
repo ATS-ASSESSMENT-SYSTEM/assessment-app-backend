@@ -9,6 +9,8 @@ from rest_framework.generics import (
     ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, ListAPIView, UpdateAPIView, GenericAPIView,
 )
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
@@ -16,17 +18,10 @@ from rest_framework.test import APIRequestFactory
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
-from .middleware import AESCipherMiddleware
-
-from rest_framework.pagination import PageNumberPagination
+from utils.middleware import AESCipherMiddleware
 
 
 class MultipleFieldLookupMixin:
-    """
-    Apply this mixin to any view or viewset to get multiple field filtering
-    based on a `lookup_fields` attribute, instead of the default single field filtering.
-    """
-    
     def get_object(self):
         queryset = self.get_queryset()  # Get the base queryset
         queryset = self.filter_queryset(queryset)  # Apply any filter backends
@@ -96,6 +91,24 @@ class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, RetrieveUpda
     
 class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = ChoiceSerializer
+
+# <<<<<<< HEAD
+#
+#
+# class GenerateRandomQuestions(ListCreateAPIView):
+#     serializer_class = QuestionSerializer
+#     renderer_classes = (CustomRenderer,)
+#
+#     def get_queryset(self):
+#         assessment_id = self.kwargs.get('assessment_id')
+#         category_id = self.kwargs.get('category_id')
+#         try:
+#             assessment = Assessment.objects.get(id=assessment_id)
+#             category = Category.objects.get(id=category_id)
+#             return Question.objects.filter(test_category__assessment=assessment, test_category=category).order_by('?')[
+#                    :5]
+#         except (Assessment.DoesNotExist, Category.DoesNotExist):
+#             raise ValidationError('Assessment or the category does not exist.')
     renderer_classes = (CustomRenderer,)
     lookup_fields = ('question_id', 'id')
 
@@ -106,4 +119,5 @@ class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView
 
 
     
+
 
