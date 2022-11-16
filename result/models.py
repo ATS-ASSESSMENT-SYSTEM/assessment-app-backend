@@ -2,7 +2,7 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 
 from assessment.models import Assessment, AssessmentSession
-from questions_category.models import Category, Question
+from questions_category.models import Category, Question, Choice
 
 
 def call_json(type_: str):
@@ -76,6 +76,7 @@ class Session_Answer(models.Model):
     session = models.ForeignKey(AssessmentSession, on_delete=models.CASCADE)
     time_remaining = models.CharField(max_length=50)
     question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
+    choice = models.ForeignKey(Choice, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'Answer for {self.question}'
@@ -85,7 +86,7 @@ class AssessmentImages(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     candidate = models.CharField(max_length=50)
-    images = models.ImageField(null=True, blank=True)
+    images = models.ImageField(null=True, blank=True, )
     created_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
