@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from assessment.models import Assessment
+from result.models import Session_Answer
 from .models import Category, Question, Choice
 
 
@@ -38,12 +39,20 @@ class ChoiceSerializer(serializers.ModelSerializer):
         fields = ('id', 'choice_text', 'is_correct')
 
 
+class SessionAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Session_Answer
+        fields = ('choice',)
+
+
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
+    session_answer = SessionAnswerSerializer(required=False)
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'difficult', 'question_categories', 'choices')
+        fields = ('id', 'question_text', 'question_type', 'difficult', 'question_categories', 'choices',
+                  'session_answer')
 
     def validate(self, attrs):
         choices = attrs.get('choices')
@@ -60,7 +69,8 @@ class QuestionSerializer(serializers.ModelSerializer):
             if choices:
                 raise serializers.ValidationError('Open ended question have no choices')
 
-        if Question.objects.filter(question_text__iexact=attrs.get('question_text'), test_category__pk=category_pk).exists():
+        if Question.objects.filter(question_text__iexact=attrs.get('question_text'),
+                                   test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
         return attrs
@@ -71,6 +81,7 @@ class QuestionSerializer(serializers.ModelSerializer):
                 'kwargs').get('pk')
             category = Category.objects.get(pk=category_pk)
             choices = validated_data.get('choices')
+            session_answer = validated_data.pop('session_answer')
             if choices:
                 obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
                                               question_categories=validated_data['question_categories'],
@@ -93,5 +104,3 @@ class QuestionSerializer(serializers.ModelSerializer):
         if choices:
             validated_data.pop('choices')
         return super().update(instance, validated_data)
-
-
