@@ -18,7 +18,7 @@ from rest_framework.test import APIRequestFactory
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
-from ..utils.middleware import AESCipherMiddleware
+from utils.middleware import AESCipherMiddleware
 
 
 class MultipleFieldLookupMixin:

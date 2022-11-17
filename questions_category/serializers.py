@@ -18,7 +18,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ('id', 'name', 'category_info', 'questions', 'test_duration', 'created_date', 'updated_date')
-        
+
         extra_kwargs = {
             'created_date': {'read_only': True},
             'updated_date': {'read_only': True},
@@ -68,7 +68,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             if choices:
                 raise serializers.ValidationError('Open ended question have no choices')
 
-        if Question.objects.filter(question_text__iexact=attrs.get('question_text'), 
+        if Question.objects.filter(question_text__iexact=attrs.get('question_text'),
                                    test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
         
@@ -108,11 +108,11 @@ class QuestionSerializer(serializers.ModelSerializer):
             validated_data.pop('choices')
         return super().update(instance, validated_data)
     
-    
+
 class GenerateQuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     session_answer = SessionAnswerSerializer(many=True, required=False)
-    
+
     class Meta:
         model = Question
         fields = ('id', 'question_text', 'question_type', 'question_categories', 'question_hint', 'choices',

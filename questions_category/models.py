@@ -32,13 +32,13 @@ class Question(models.Model):
     )
 
     TYPES = (
-        ("Multi-choices", "Multi-choices"),
+        ("Multi-choice", "Multi-choice"),
         ("Open-ended", "Open-ended")
     )
 
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
-    question_type = models.CharField(max_length=150, default='Multi-choices', choices=TYPES)
+    question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
     question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
@@ -53,6 +53,9 @@ class Question(models.Model):
     def session_answer(self):
         return self.session_answer_set.all()
 
+    def session_answer(self):
+        return self.session_answer_set.all()
+
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
@@ -64,6 +67,9 @@ class Choice(models.Model):
     def __str__(self):
         return self.choice_text
 
+    def __str__(self):
+        return self.choice_text
+
 
 class OpenEndedAnswer(models.Model):
     question = models.ForeignKey(Question, related_name="answer", on_delete=models.CASCADE)
@@ -72,4 +78,3 @@ class OpenEndedAnswer(models.Model):
     is_correct = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
-
