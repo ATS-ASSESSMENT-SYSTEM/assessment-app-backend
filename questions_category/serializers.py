@@ -42,21 +42,20 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class SessionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session_Answer
-        fields = ('choice',)
+        fields = ('choice', 'time_remaining')
 
 
 class QuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
-    session_answer = SessionAnswerSerializer(required=False)
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'difficult', 'question_categories', 'choices',
-                  'session_answer')
+        fields = ('id', 'question_text', 'question_type', 'question_categories', 'question_hint', 'choices')
 
     def validate(self, attrs):
         choices = attrs.get('choices')
         category_pk = self.context['request'].parser_context.get('kwargs').get('pk')
+        question_hint = attrs.get('question_hint')
 
         if attrs.get('question_type') == 'Multi-choices':
             if not choices:
@@ -73,6 +72,9 @@ class QuestionSerializer(serializers.ModelSerializer):
                                    test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
+        if not question_hint:
+            raise serializers.ValidationError('Question hint must be provided.')
+
         return attrs
 
     def create(self, validated_data):
@@ -81,19 +83,20 @@ class QuestionSerializer(serializers.ModelSerializer):
                 'kwargs').get('pk')
             category = Category.objects.get(pk=category_pk)
             choices = validated_data.get('choices')
-            session_answer = validated_data.pop('session_answer')
             if choices:
                 obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
                                               question_categories=validated_data['question_categories'],
                                               question_text=validated_data['question_text'],
-                                              difficult=validated_data['difficult'])
+                                              difficult=validated_data['difficult'],
+                                              question_hint=validated_data['question_hint'])
                 for choice in choices:
                     Choice.objects.create(question=obj, **choice)
                 return obj
             obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
                                           question_categories=validated_data['question_categories'],
                                           question_text=validated_data['question_text'],
-                                          difficult=validated_data['difficult'])
+                                          difficult=validated_data['difficult'],
+                                          question_hint=validated_data['question_hint'])
 
             return obj
         except Category.DoesNotExist:
@@ -104,3 +107,13 @@ class QuestionSerializer(serializers.ModelSerializer):
         if choices:
             validated_data.pop('choices')
         return super().update(instance, validated_data)
+
+
+class GenerateQuestionSerializer(serializers.ModelSerializer):
+    choices = ChoiceSerializer(many=True, required=False)
+    session_answer = SessionAnswerSerializer(many=True, required=False)
+
+    class Meta:
+        model = Question
+        fields = ('id', 'question_text', 'question_type', 'question_categories', 'question_hint', 'choices',
+                  'session_answer')

@@ -36,25 +36,22 @@ class Question(models.Model):
         ("Open-ended", "Open-ended")
     )
 
-    DIFFICULTIES = (
-        ("Easy", "Easy"),
-        ("Intermediate", "Intermediate"),
-        ("Experience", "Experience")
-    )
-
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
     question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
     question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
-    difficult = models.CharField(max_length=150, choices=DIFFICULTIES)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+    question_hint = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.question_text
 
     class Meta:
         ordering = ('-created_date',)
+
+    def session_answer(self):
+        return self.session_answer_set.all()
 
 
 class Choice(models.Model):

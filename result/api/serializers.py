@@ -126,9 +126,6 @@ class CandidatesResultSerializer(serializers.ModelSerializer):
 #         model = Result_Info
 #         fields = ('location', 'device', 'enabled_webcam', 'full_screen_active_always', 'images',)
 
-class OpenendedAnswerSerializer(serializers.Serializer):
-    answer_text = serializers.CharField(required=False)
-
 
 class SessionAnswerSerializer(serializers.ModelSerializer):
     answer_text = serializers.CharField(required=False)
@@ -296,10 +293,9 @@ class AssessmentImageSerializer(serializers.ModelSerializer):
         print(attrs)
         try:
             AssessmentSession.objects.get(session_id=attrs.get('session_id'))
-            return  attrs
+            return attrs
         except AssessmentSession.DoesNotExist:
             raise serializers.ValidationError("Invalid Session ID")
-
 
 
 class ApplicantSerializer(serializers.Serializer):
