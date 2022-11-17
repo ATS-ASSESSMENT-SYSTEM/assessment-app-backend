@@ -5,7 +5,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 from django.db.models import Exists
 
-from result.models import Result, Category_Result, Session_Answer, AssessmentImages, Result_Info
+from result.models import Result, Category_Result, Session_Answer, AssessmentImages
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, OpenEndedAnswer
 
@@ -126,70 +126,99 @@ class CandidatesResultSerializer(serializers.ModelSerializer):
 #         model = Result_Info
 #         fields = ('location', 'device', 'enabled_webcam', 'full_screen_active_always', 'images',)
 
-class OpenendedAnswerSerializer(serializers.Serializer):
-    question_type = serializers.CharField()
-    answer_text = serializers.CharField()
-
 
 class SessionAnswerSerializer(serializers.ModelSerializer):
-    open_ended_info = OpenendedAnswerSerializer(write_only=True, required=False)
+    answer_text = serializers.CharField(required=False)
+    question_type = serializers.CharField()
 
     class Meta:
         model = Session_Answer
         fields = ('candidate', "assessment", "category", "question", "is_correct", "session",
-                  "time_remaining", "open_ended_info")
+                  "time_remaining", "question_type", "choice", "answer_text")
+        extra_kwargs = {"answer_text": {"required": False, "allow_null": True}}
+
+    def validate(self, attrs):
+        try:
+            print(attrs['session'].session_id)
+            session = attrs.get('session')
+
+            check_session = AssessmentSession.objects.get(session_id=session.session_id)
+
+            if check_session.assessment != attrs.get('assessment'):
+                raise serializers.ValidationError('Invalid assessment ID')
+
+            if attrs.get('question_type') == 'Open-ended' and not attrs.get('answer_text'):
+                raise serializers.ValidationError('Please, provide an answer for the question')
+            return attrs
+        except AssessmentSession.DoesNotExist:
+            raise serializers.ValidationError('Invalid Session ID')
 
     def create(self, validated_data):
-        is_correct_value = validated_data.pop('is_correct')
-        session_remaining_time = validated_data.pop('time_remaining')
-        op_info = validated_data.pop('open_ended_info')
-        question_type = op_info['question_type']
-        answer_text = op_info['answer_text']
+        try:
+            session_remaining_time = validated_data.pop('time_remaining')
+            is_correct_value = validated_data.pop('is_correct')
+            question_type = validated_data.pop('question_type')
 
-        if question_type not in ["Open-ended", 'Multi-choice']:
-            raise serializers.ValidationError("Invalid Question Type")
+            if question_type == 'Open-ended':
+                answer_text = validated_data.pop('answer_text')
 
-        session_answer = Session_Answer.objects.filter(**validated_data)
-        print(session_answer)
+            if question_type not in ["Open-ended", 'Multi-choice']:
+                raise serializers.ValidationError("Invalid Question Type")
 
-        if question_type == "Multi-Choice":
+            print(validated_data)
+
+            session = validated_data.pop("session").session_id
+            choice = validated_data.pop("choice")
+            print(session, validated_data)
+
+            session_answer = Session_Answer.objects.filter(session=session, **validated_data)
             if session_answer.exists():
-                session_answer_instance = session_answer.first()
-                session_answer_instance.is_correct = is_correct_value
-                session_answer_instance.time_remaining = session_remaining_time
-                session_answer_instance.save()
-                return session_answer_instance
-            new_session_answer = Session_Answer(**validated_data, is_correct=is_correct_value,
-                                                time_remaining=session_remaining_time)
-            new_session_answer.save()
-            return new_session_answer
+                if session_answer.first().question_type != question_type:
+                    raise serializers.ValidationError("You can't interchange question type")
 
-        if question_type == "Open-ended":
-            if session_answer.exists():
-                session_answer_instance = session_answer.first()
-                session_answer_instance.is_correct = is_correct_value
-                session_answer_instance.time_remaining = session_remaining_time
-                session_answer_instance.question_type = 'Open-ended'
-                session_answer_instance.save()
-                OpenEndedAnswer.objects.update_or_create(question=validated_data.get('question'),
-                                                         candidate=validated_data.get(
-                                                             'candidate'),
-                                                         answer_text=answer_text,
-                                                         defaults={'question': validated_data.get(
-                                                             'question'),
-                                                             'candidate': validated_data.get(
-                                                                 'candidate')})
-                return session_answer_instance
-            new_session_answer = Session_Answer(**validated_data, is_correct=is_correct_value,
-                                                time_remaining=session_remaining_time, question_type='Open-ended')
+            if question_type == "Multi-choice":
+                if session_answer.exists():
+                    session_answer_instance = session_answer.first()
+                    session_answer_instance.is_correct = is_correct_value
+                    session_answer_instance.time_remaining = session_remaining_time
+                    session_answer_instance.choice = choice
+                    session_answer_instance.question_type = 'Multi-choice'
+                    session_answer_instance.save()
+                    return session_answer_instance
+                new_session_answer = Session_Answer(**validated_data, is_correct=is_correct_value,
+                                                    time_remaining=session_remaining_time)
+                new_session_answer.save()
+                return new_session_answer
 
-            save_op_answer = OpenEndedAnswer(question=validated_data.get('question'),
-                                             candidate=validated_data.get('candidate'),
-                                             answer_text=answer_text,
-                                             )
-            new_session_answer.save()
-            save_op_answer.save()
-            return new_session_answer
+            if question_type == "Open-ended":
+
+                if session_answer.exists():
+                    session_answer_instance = session_answer.first()
+                    session_answer_instance.time_remaining = session_remaining_time
+                    session_answer_instance.question_type = 'Open-ended'
+                    session_answer_instance.save()
+                    OpenEndedAnswer.objects.update_or_create(question=validated_data.get('question'),
+                                                             candidate=validated_data.get(
+                                                                 'candidate'),
+                                                             answer_text=answer_text,
+                                                             defaults={'question': validated_data.get(
+                                                                 'question'),
+                                                                 'candidate': validated_data.get(
+                                                                     'candidate')})
+                    return session_answer_instance
+                new_session_answer = Session_Answer(**validated_data,
+                                                    time_remaining=session_remaining_time, question_type='Open-ended')
+
+                save_op_answer = OpenEndedAnswer(question=validated_data.get('question'),
+                                                 candidate=validated_data.get('candidate'),
+                                                 answer_text=answer_text,
+                                                 )
+                new_session_answer.save()
+                save_op_answer.save()
+                return new_session_answer
+            raise serializers.ValidationError('Invalid data provided, please confirm and check again')
+        except KeyError as error:
+            raise serializers.ValidationError(f'Some field were not provided:{error}')
 
 
 class SessionProcessorSerializer(serializers.Serializer):
@@ -237,8 +266,8 @@ class SessionProcessorSerializer(serializers.Serializer):
                                            score=correct_score.count()
                                            )
         session_category.save()
-        correct_score.delete()
-        session_instance.delete()
+        # correct_score.delete()
+        # session_instance.delete()
 
         return validated_data
 
@@ -247,18 +276,26 @@ class AssessmentProcessorSerializer(serializers.Serializer):
     pass
 
 
-class SessionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AssessmentSession
-        field = ('session_id',)
+# class SessionSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = AssessmentSession
+#         field = ('session_id',)
 
 
 class AssessmentImageSerializer(serializers.ModelSerializer):
-    session_id = SessionSerializer(write_only=True)
+    session_id = serializers.CharField(write_only=True)
 
     class Meta:
         model = AssessmentImages
-        field = ('images', 'session_id')
+        fields = ('image', 'session_id')
+
+    def validate(self, attrs):
+        print(attrs)
+        try:
+            AssessmentSession.objects.get(session_id=attrs.get('session_id'))
+            return attrs
+        except AssessmentSession.DoesNotExist:
+            raise serializers.ValidationError("Invalid Session ID")
 
 
 class ApplicantSerializer(serializers.Serializer):
@@ -267,42 +304,32 @@ class ApplicantSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=100)
 
 
-class ResultInfoSerializer(serializers.ModelSerializer):
-    applicant = ApplicantSerializer(write_only=True)
-    assessment_id = serializers.IntegerField(required=True)
-
-    class Meta:
-        model = Result_Info
-        field = ('location', 'device', 'enabled_webcam', 'applicant')
-
-    def validate(self, attrs):
-        try:
-            Assessment.objects.get(pk=attrs['assessment_id'])
-        except Assessment.DoesNotExist:
-            raise serializers.ValidationError('Please Provide a valid assessment id ')
-
-    def create(self, validated_data):
-        candidate_id = validated_data.pop('applicant')
-        assessment_id = validated_data.pop('assessment')
-        assessment = Assessment.objects.get(pk=assessment_id)
-        result = Result(assessment=assessment, candidate=candidate_id['candidate_id'])
-        result.save()
-        new_info = Result_Info(result=result, **validated_data)
-        new_info.save()
-        return new_info
-
-
-class ResultListInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Result_Info
-        field = ('location', 'device', 'enabled_webcam', 'applicant_info')
+# class ResultInfoSerializer(serializers.ModelSerializer):
+#     applicant = ApplicantSerializer(write_only=True)
+#     assessment_id = serializers.IntegerField(required=True)
+#
+#     class Meta:
+#         model = Result_Info
+#         field = ('location', 'device', 'enabled_webcam', 'applicant')
+#
+#     def validate(self, attrs):
+#         try:
+#             Assessment.objects.get(pk=attrs['assessment_id'])
+#         except Assessment.DoesNotExist:
+#             raise serializers.ValidationError('Please Provide a valid assessment id ')
+#
+#     def create(self, validated_data):
+#         candidate_id = validated_data.pop('applicant')
+#         assessment_id = validated_data.pop('assessment')
+#         assessment = Assessment.objects.get(pk=assessment_id)
+#         result = Result(assessment=assessment, candidate=candidate_id['candidate_id'])
+#         result.save()
+#         new_info = Result_Info(result=result, **validated_data)
+#         new_info.save()
+#         return new_info
 
 
 class ResultListSerializer(serializers.ModelSerializer):
-    result_info = ResultListInfoSerializer(read_only=True)
-
     class Meta:
         model = Result
-        field = ['candidate', 'status', 'created_date', 'is_active' 'result_info']
-
-
+        field = ['candidate', 'status', 'created_date', 'is_active']

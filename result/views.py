@@ -12,7 +12,7 @@ from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 from result.models import Result, Category_Result, AssessmentImages
 from assessment.models import AssessmentSession
 from .api.serializers import ResultSerializer, CandidateResultSerializer, SessionAnswerSerializer, \
-    SessionProcessorSerializer, AssessmentImageSerializer, ResultListInfoSerializer
+    SessionProcessorSerializer, AssessmentImageSerializer, ResultListSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
 
@@ -72,22 +72,23 @@ class AssessmentImagesAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
+        print(request.data['session_id'])
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            session = AssessmentSession.objects.get(session=request.data.session)
+            session = AssessmentSession.objects.get(session_id=request.data['session_id'])
             session_images = AssessmentImages(assessment=session.assessment,
                                               category=session.category,
                                               candidate=session.candidate,
-                                              images=request.data.get('image')
+                                              image=request.data.get('image')
                                               )
             session_images.save()
-            return Response(serializer.data, status=status.HTTP_201_OK)
+            print(session_images.image)
+            return Response("uploaded", status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ResultLIstAPIView(ListAPIView):
     renderer_classes = (CustomRenderer,)
-    serializer_class = ResultListInfoSerializer
+    serializer_class = ResultListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = ['status', 'assessment']
-

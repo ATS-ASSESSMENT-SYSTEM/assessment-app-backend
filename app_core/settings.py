@@ -150,8 +150,8 @@ STATUS_CODES = {
 }
 
 
-MEDIA_URL = '/assessment_images/'
+MEDIA_URL = 'media/'
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-MEDIA_ROOT = os.path.join(BASE_DIR, 'assessment/images')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
