@@ -91,6 +91,3 @@ class AssessmentImages(models.Model):
 
     class Meta:
         ordering = ["-created_date"]
-
-
-

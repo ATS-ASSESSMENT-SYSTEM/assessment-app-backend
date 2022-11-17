@@ -132,7 +132,7 @@ class OpenendedAnswerSerializer(serializers.Serializer):
 
 
 class SessionAnswerSerializer(serializers.ModelSerializer):
-    open_ended_info = OpenendedAnswerSerializer(write_only=True)
+    open_ended_info = OpenendedAnswerSerializer(write_only=True, required=False)
 
     class Meta:
         model = Session_Answer
