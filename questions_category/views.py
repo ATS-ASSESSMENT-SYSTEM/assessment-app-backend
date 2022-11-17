@@ -9,6 +9,8 @@ from rest_framework.generics import (
     ListCreateAPIView, RetrieveUpdateDestroyAPIView, CreateAPIView, ListAPIView, UpdateAPIView, GenericAPIView,
 )
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+
 from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
@@ -16,17 +18,10 @@ from rest_framework.test import APIRequestFactory
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
-from .middleware import AESCipherMiddleware
-
-from rest_framework.pagination import PageNumberPagination
+from ..utils.middleware import AESCipherMiddleware
 
 
 class MultipleFieldLookupMixin:
-    """
-    Apply this mixin to any view or viewset to get multiple field filtering
-    based on a `lookup_fields` attribute, instead of the default single field filtering.
-    """
-    
     def get_object(self):
         queryset = self.get_queryset()  # Get the base queryset
         queryset = self.filter_queryset(queryset)  # Apply any filter backends
@@ -106,4 +101,5 @@ class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView
 
 
     
+
 

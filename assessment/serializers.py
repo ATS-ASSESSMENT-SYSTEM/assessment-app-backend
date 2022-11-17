@@ -37,6 +37,7 @@ class AssessmentSerializer(ModelSerializer):
     
 class CategorySerializer(ModelSerializer):
     questions = serializers.HyperlinkedIdentityField(view_name='question-list-view', format='html')
+    
     class Meta:
         model = Category
         fields = ('id', 'name', 'category_info', 'questions', 'created_date', 'updated_date')
@@ -57,4 +58,9 @@ class ApplicationTypeSerializer(ModelSerializer):
         
 class StartAssessmentSerializer(serializers.Serializer):
     applicant_id = serializers.CharField()
+    device = serializers.CharField()
+    browser = serializers.CharField()
+    location = serializers.CharField()
+    enable_webcam = serializers.BooleanField()
+    full_screen_active = serializers.BooleanField()
 

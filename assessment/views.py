@@ -67,7 +67,6 @@ class GenerateRandomQuestions(generics.CreateAPIView):
     serializer_class = StartAssessmentSerializer
     renderer_classes = (CustomRenderer,)
 
-
     def post(self, request, assessment_id, category_id):
         serializer = self.get_serializer(data=request.data)
         print(assessment_id)
@@ -78,24 +77,29 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                 print(assessment)
                 category = Category.objects.get(id=category_id)
                 print(category)
-                session = AssessmentSession.objects.filter(assessment=assessment, category=category,
+                current_session = AssessmentSession.objects.filter(assessment=assessment, category=category,
                                                     candidate=serializer.data.get('applicant_id'))
-                if session.exists():
-                    questions = session.first().question_list.all()
+                if current_session.exists():
+                    questions = current_session.first().question_list.all()
+                    session = current_session.first()
                 else:
                     questions = Question.objects.filter(test_category__assessment=assessment,
-                                                        test_category=category).order_by('?')[:category.num_of_questions]
-                    new_session = AssessmentSession.objects.create(assessment=assessment, category=category,
-                                                            candidate=serializer.data['applicant_id'])
+                                                        test_category=category, question_categories="Real").order_by('?')[:category.num_of_questions]
+                    session = AssessmentSession.objects.create(assessment=assessment, category=category,
+                                                            candidate=serializer.data['applicant_id'],
+                                                            device=serializer.data['device'],
+                                                            browser=serializer.data['browser'],
+                                                            enable_webcam=serializer.data['enable_webcam'],
+                                                            location=serializer.data['location'],
+                                                            full_screen_active=serializer.data[
+                                                                'full_screen_active'])
                     for question in category.question_set.all():
-                        new_session.question_list.add(question)
+                        session.question_list.add(question)
             except (Assessment.DoesNotExist, Category.DoesNotExist):
                 raise ValidationError('Assessment or the category does not exist.')
             else:
-                print(questions)
-                q = QuestionSerializer(questions, many=True)
-                print(q)
-                return Response(q.data, status=status.HTTP_200_OK)
+                q = GenerateQuestionSerializer(questions, many=True)
+                return Response({'session_id': session.session_id,'questions': q.data}, status=status.HTTP_200_OK)
         return Response({'error': serializer.errors})
     
     
@@ -109,3 +113,4 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
+    

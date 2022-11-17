@@ -54,7 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'questions_category.middleware.AESCipherMiddleware',
+    # 'utils.middleware.AESCipherMiddleware',
     # 'questions_category.middleware.SimpleMiddleware',
 ]
 
