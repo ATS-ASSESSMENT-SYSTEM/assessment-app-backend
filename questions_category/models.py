@@ -49,6 +49,9 @@ class Question(models.Model):
 
     class Meta:
         ordering = ('-created_date',)
+        
+    def session_answer(self):
+        return self.session_answer_set.all()
 
     def session_answer(self):
         return self.session_answer_set.all()
@@ -60,6 +63,9 @@ class Choice(models.Model):
     is_correct = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.choice_text
 
     def __str__(self):
         return self.choice_text

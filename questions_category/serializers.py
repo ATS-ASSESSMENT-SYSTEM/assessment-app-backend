@@ -37,8 +37,8 @@ class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
         fields = ('id', 'choice_text', 'is_correct')
-
-
+        
+        
 class SessionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session_Answer
@@ -71,7 +71,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         if Question.objects.filter(question_text__iexact=attrs.get('question_text'),
                                    test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
-
+        
         if not question_hint:
             raise serializers.ValidationError('Question hint must be provided.')
 
@@ -107,7 +107,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         if choices:
             validated_data.pop('choices')
         return super().update(instance, validated_data)
-
+    
 
 class GenerateQuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)

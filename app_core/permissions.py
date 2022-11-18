@@ -4,7 +4,7 @@ from rest_framework.permissions import BasePermission
 
 class RequestPermission(BasePermission):
     message = "Permission not granted."
-
+    
     def has_permission(self, request, view):
         try:
             api_key = request.META.get('HTTP_API_KEY')
