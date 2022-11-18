@@ -9,10 +9,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 
-from result.models import Result, Category_Result, AssessmentImages
+from result.models import Result, Category_Result, AssessmentImages, AssessmentFeedback
 from assessment.models import AssessmentSession
+
 from .api.serializers import ResultSerializer, CandidateResultSerializer, SessionAnswerSerializer, \
-    SessionProcessorSerializer, AssessmentImageSerializer, ResultListSerializer
+    SessionProcessorSerializer, AssessmentImageSerializer, ResultListSerializer, AssessmentMediaSerializer, \
+AssessmentFeedbackSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
 
@@ -92,3 +94,14 @@ class ResultLIstAPIView(ListAPIView):
     serializer_class = ResultListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = ['status', 'assessment']
+
+
+class AssessmentMediaAPIView(CreateAPIView):
+    serializer_class = AssessmentMediaSerializer
+    renderer_classes = (CustomRenderer,)
+    parser_classes = (MultiPartParser, FormParser)
+
+
+class AssessmentFeedbackAPIView(CreateAPIView):
+    serializer_class = AssessmentFeedbackSerializer
+    renderer_classes = (CustomRenderer,)
