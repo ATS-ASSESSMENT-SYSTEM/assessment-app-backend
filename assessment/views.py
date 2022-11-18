@@ -84,15 +84,15 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                     questions = Question.objects.filter(test_category__assessment=assessment,
                                                         test_category=category, question_categories="Real").order_by('?')[
                                 :category.num_of_questions]
-                    session = AssessmentSession.objects.create(assessment=assessment, 
-                                                            category=category,
-                                                            candidate=serializer.data['applicant_id'],
-                                                            device=serializer.data['device'],
-                                                            browser=serializer.data['browser'],
-                                                            enable_webcam=serializer.data['enable_webcam'],
-                                                            location=serializer.data['location'],
-                                                            full_screen_active=serializer.data[
-                                                                'full_screen_active'])
+                    session = AssessmentSession.objects.create(assessment=assessment,
+                                                               category=category,
+                                                               candidate=serializer.data['applicant_id'],
+                                                               device=serializer.data['device'],
+                                                               browser=serializer.data['browser'],
+                                                               enable_webcam=serializer.data['enable_webcam'],
+                                                               location=serializer.data['location'],
+                                                               full_screen_active=serializer.data[
+                                                                   'full_screen_active'])
                     for question in category.question_set.all():
                         session.question_list.add(question)
             except (Assessment.DoesNotExist, Category.DoesNotExist):
