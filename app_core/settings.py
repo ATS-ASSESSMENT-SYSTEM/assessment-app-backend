@@ -59,7 +59,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'utils.middleware.AESCipherMiddleware',
-    # 'questions_category.middleware.SimpleMiddleware',
+    # 'utils.middleware.SimpleMiddleware',
+    'utils.log.ResponseLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'app_core.urls'
@@ -140,6 +141,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 
 # Default primary key field type
@@ -155,7 +157,7 @@ STATUS_CODES = {
 
 MEDIA_URL = 'media/'
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'app_core/static')]
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CORS_ALLOWED_ORIGINS = [
@@ -163,4 +165,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
