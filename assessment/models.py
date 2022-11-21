@@ -36,7 +36,6 @@ class ApplicationType(models.Model):
 
 class Assessment(models.Model):
     name = models.CharField(max_length=200)
-    instruction = models.TextField(null=True, blank=False)
     application_type = models.ForeignKey(ApplicationType, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
