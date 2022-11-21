@@ -160,7 +160,7 @@ MEDIA_URL = 'media/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'app_core/static')]
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-CORS_ALLOWED_ORIGINS = ['http://assessbk.afexats.com/',
+CORS_ALLOWED_ORIGINS = ['http://assessbk.afexats.com',
                         'http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000',
                         'http://127.0.0.1:8000']
 CORS_ALLOW_CREDENTIALS = True
