@@ -50,21 +50,29 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_categories', 'question_hint', 'choices')
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'question_hint', 'choices')
 
     def validate(self, attrs):
         choices = attrs.get('choices')
         category_pk = self.context['request'].parser_context.get('kwargs').get('pk')
         question_hint = attrs.get('question_hint')
+        question_type = attrs.get('question_type')
+        question_category = attrs.get('question_category')
 
-        if attrs.get('question_type') == 'Multi-choices':
+        if not question_type:
+            raise serializers.ValidationError('Question type must be provided.')
+
+        if not question_category:
+            raise serializers.ValidationError('Question category must be provided.')
+
+        if question_type == 'Multi-choice':
             if not choices:
                 raise serializers.ValidationError('Question must have at least 2 choices')
 
             if len(choices) < 2:
                 raise serializers.ValidationError('Choices must be 2 at least')
 
-        if attrs.get('question_type') == 'Open-ended':
+        if question_type == 'Open-ended':
             if choices:
                 raise serializers.ValidationError('Open ended question have no choices')
 
@@ -85,17 +93,15 @@ class QuestionSerializer(serializers.ModelSerializer):
             choices = validated_data.get('choices')
             if choices:
                 obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
-                                              question_categories=validated_data['question_categories'],
+                                              question_categories=validated_data['question_category'],
                                               question_text=validated_data['question_text'],
-                                              difficult=validated_data['difficult'],
                                               question_hint=validated_data['question_hint'])
                 for choice in choices:
                     Choice.objects.create(question=obj, **choice)
                 return obj
             obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
-                                          question_categories=validated_data['question_categories'],
+                                          question_categories=validated_data['question_category'],
                                           question_text=validated_data['question_text'],
-                                          difficult=validated_data['difficult'],
                                           question_hint=validated_data['question_hint'])
 
             return obj
@@ -115,5 +121,5 @@ class GenerateQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_categories', 'question_hint', 'choices',
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'question_hint', 'choices',
                   'session_answer')

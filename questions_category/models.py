@@ -39,7 +39,7 @@ class Question(models.Model):
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
     question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
-    question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
+    question_category = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     question_hint = models.TextField(null=True, blank=True)
@@ -53,9 +53,6 @@ class Question(models.Model):
     def session_answer(self):
         return self.session_answer_set.all()
 
-    def session_answer(self):
-        return self.session_answer_set.all()
-
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
@@ -64,9 +61,6 @@ class Choice(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     
-    def __str__(self):
-        return self.choice_text
-
     def __str__(self):
         return self.choice_text
 
