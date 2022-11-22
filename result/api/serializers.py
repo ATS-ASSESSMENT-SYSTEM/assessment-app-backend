@@ -5,7 +5,7 @@ from rest_framework import serializers
 from django.db.models import Sum
 from django.db.models import Exists
 
-from result.models import Result, Category_Result, Session_Answer, AssessmentImages
+from result.models import Result, Category_Result, Session_Answer, AssessmentImages, AssessmentMedia, AssessmentFeedback
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, OpenEndedAnswer
 
@@ -272,10 +272,6 @@ class SessionProcessorSerializer(serializers.Serializer):
         return validated_data
 
 
-class AssessmentProcessorSerializer(serializers.Serializer):
-    pass
-
-
 # class SessionSerializer(serializers.ModelSerializer):
 #     class Meta:
 #         model = AssessmentSession
@@ -333,3 +329,21 @@ class ResultListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result
         field = ['candidate', 'status', 'created_date', 'is_active']
+
+
+class AssessmentMediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssessmentMedia
+        fields = ('assessment', 'media_type', 'candidate', 'media')
+
+    def validate(self, attrs):
+        media_type = attrs.get('media_type')
+        if media_type not in ['Sound', 'Video', 'Image'] or media_type is None:
+            raise serializers.ValidationError('Invalid  Media type, can only be Sound, Video or Image')
+        return attrs
+
+
+class AssessmentFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssessmentFeedback
+        fields = ('assessment', 'applicant_info', 'feedback')
