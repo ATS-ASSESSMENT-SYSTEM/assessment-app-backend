@@ -60,14 +60,17 @@ class QuestionSerializer(serializers.ModelSerializer):
         question_category = attrs.get('question_category')
 
         if not question_type:
-            raise serializers.ValidationError('Question type must be provided.')
+            raise serializers.ValidationError('question_type must be provided.')
 
         if not question_category:
-            raise serializers.ValidationError('Question category must be provided.')
+            raise serializers.ValidationError('question_category must be provided.')
+
+        if not question_hint:
+            raise serializers.ValidationError('question_hint must be provided.')
 
         if question_type == 'Multi-choice':
             if not choices:
-                raise serializers.ValidationError('Question must have at least 2 choices')
+                raise serializers.ValidationError('choices must be provided.')
 
             if len(choices) < 2:
                 raise serializers.ValidationError('Choices must be 2 at least')
@@ -79,9 +82,6 @@ class QuestionSerializer(serializers.ModelSerializer):
         if Question.objects.filter(question_text__iexact=attrs.get('question_text'),
                                    test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
-        
-        if not question_hint:
-            raise serializers.ValidationError('Question hint must be provided.')
 
         return attrs
 
@@ -93,14 +93,14 @@ class QuestionSerializer(serializers.ModelSerializer):
             choices = validated_data.get('choices')
             if choices:
                 obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
-                                              question_categories=validated_data['question_category'],
+                                              question_category=validated_data['question_category'],
                                               question_text=validated_data['question_text'],
                                               question_hint=validated_data['question_hint'])
                 for choice in choices:
                     Choice.objects.create(question=obj, **choice)
                 return obj
             obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
-                                          question_categories=validated_data['question_category'],
+                                          question_category=validated_data['question_category'],
                                           question_text=validated_data['question_text'],
                                           question_hint=validated_data['question_hint'])
 
