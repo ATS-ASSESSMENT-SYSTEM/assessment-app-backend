@@ -11,7 +11,7 @@ class AssessmentSerializer(ModelSerializer):
 
     class Meta:
         model = Assessment
-        fields = ("name", "instruction", "application_type", "benchmark", "date_created", "date_updated", "categories")
+        fields = ("name", "application_type", "benchmark", "date_created", "date_updated", "categories")
 
     extra_kwargs = {
         'created_date': {'read_only': True},
@@ -22,9 +22,6 @@ class AssessmentSerializer(ModelSerializer):
         assessment_name = attrs.get('name')
         if Assessment.objects.filter(name__iexact=assessment_name).exists():
             raise serializers.ValidationError('Assessment with the same name already exist.')
-
-        if not attrs.get('instruction'):
-            raise serializers.ValidationError('You must provide instruction for an assessment.')
 
         return attrs
 
