@@ -11,7 +11,7 @@ class AssessmentSerializer(ModelSerializer):
 
     class Meta:
         model = Assessment
-        fields = ("name", "instruction", "application_type", "benchmark", "date_created", "date_updated", "categories")
+        fields = ("name", "application_type", "benchmark", "date_created", "date_updated", "categories")
 
     extra_kwargs = {
         'created_date': {'read_only': True},
