@@ -71,7 +71,7 @@ class QuestionCreateAPIView(CreateAPIView):
 class QuestionListAPIView(ListAPIView):
     serializer_class = QuestionSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['test_category', 'question_type', 'question_categories']
+    filterset_fields = ['test_category', 'question_type', 'question_category']
     renderer_classes = (CustomRenderer,)
     
     def get_queryset(self):
