@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import AddResultAPIView, CandidateResultAPIView, \
     SessionAnswerAPIView, SessionProcessorAPIView, AssessmentImagesAPIView, \
-    AssessmentMediaAPIView, AssessmentFeedbackAPIView
+    AssessmentMediaAPIView, AssessmentFeedbackAPIView, CandidatesResultAPIView
 
 urlpatterns = [
     path('create', AddResultAPIView.as_view(), name='add-result'),
@@ -11,5 +11,5 @@ urlpatterns = [
     path('save_session', SessionProcessorAPIView.as_view(), name='save-section'),
     path('save_image', AssessmentImagesAPIView.as_view(), name='save-image'),
     path('save_media', AssessmentMediaAPIView.as_view(), name="save-media"),
-    path('save_feedback', AssessmentFeedbackAPIView.as_view(), name="save-feedback")
+    path('save_feedback', AssessmentFeedbackAPIView.as_view(), name="save-feedback"),
 ]

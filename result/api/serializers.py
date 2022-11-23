@@ -9,6 +9,13 @@ from result.models import Result, Category_Result, Session_Answer, AssessmentIma
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, OpenEndedAnswer
 
+RESULT_CONST = {
+    "passed": "Passed",
+    "failed": "Failed",
+    "not_taken": "Not_taken",
+    "inconclusive": 'Inconclusive'
+}
+
 
 class AssessmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -98,26 +105,6 @@ class ResultSerializer(serializers.ModelSerializer):
         return create_result
 
 
-class CandidateResultSerializer(serializers.ModelSerializer):
-    result = serializers.SerializerMethodField()
-    assessment = AssessmentSerializer()
-
-    class Meta:
-        model = Result
-        fields = ('assessment', 'candidate', 'created_date')
-
-    def get_result(self, obj):
-        # result = {}
-        q = Category_Result.objects.filter(result=obj.pk)
-        # result['scores'] = q
-        # result['total'] = q.aggregate(sum=Sum('score'))
-        return q
-
-
-class CandidatesResultSerializer(serializers.ModelSerializer):
-    pass
-
-
 # class ResultInfoSerializer(serializers.ModelSerializer):
 #     assessment = serializers.CharField(required=True)
 #     candidate = CandidateSerializer(required=True)
@@ -139,8 +126,21 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         try:
-            print(attrs['session'].session_id)
+            print("attribute=>", attrs)
             session = attrs.get('session')
+            answer_text = attrs.get('answer_text')
+
+            question_type = attrs.get('question_type')
+
+            if question_type not in ["Open-ended", 'Multi-choice']:
+                raise serializers.ValidationError("Invalid Question Type")
+
+            if question_type == 'Multi-choice':
+                attrs.pop('answer_text')
+
+            if question_type == 'Open-ended':
+                if not answer_text:
+                    raise serializers.ValidationError('Please provide an answer for the question')
 
             check_session = AssessmentSession.objects.get(session_id=session.session_id)
 
@@ -149,29 +149,26 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             if attrs.get('question_type') == 'Open-ended' and not attrs.get('answer_text'):
                 raise serializers.ValidationError('Please, provide an answer for the question')
+
             return attrs
         except AssessmentSession.DoesNotExist:
             raise serializers.ValidationError('Invalid Session ID')
 
     def create(self, validated_data):
+        print("validate=>", validated_data)
         try:
             session_remaining_time = validated_data.pop('time_remaining')
             is_correct_value = validated_data.pop('is_correct')
             question_type = validated_data.pop('question_type')
 
-            if question_type == 'Open-ended':
-                answer_text = validated_data.pop('answer_text')
+            answer_text = validated_data.get('answer_text')
 
-            if question_type not in ["Open-ended", 'Multi-choice']:
-                raise serializers.ValidationError("Invalid Question Type")
-
-            print(validated_data)
-
-            session = validated_data.pop("session").session_id
-            choice = validated_data.pop("choice")
+            session = validated_data.get("session")
+            choice = validated_data.get("choice")
             print(session, validated_data)
 
-            session_answer = Session_Answer.objects.filter(session=session, **validated_data)
+            session_answer = Session_Answer.objects.filter(**validated_data)
+
             if session_answer.exists():
                 if session_answer.first().question_type != question_type:
                     raise serializers.ValidationError("You can't interchange question type")
@@ -207,7 +204,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                                                                      'candidate')})
                     return session_answer_instance
                 new_session_answer = Session_Answer(**validated_data,
-                                                    time_remaining=session_remaining_time, question_type='Open-ended')
+                                                    time_remaining=session_remaining_time, question_type='Open-ended',)
 
                 save_op_answer = OpenEndedAnswer(question=validated_data.get('question'),
                                                  candidate=validated_data.get('candidate'),
@@ -216,6 +213,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 new_session_answer.save()
                 save_op_answer.save()
                 return new_session_answer
+
             raise serializers.ValidationError('Invalid data provided, please confirm and check again')
         except KeyError as error:
             raise serializers.ValidationError(f'Some field were not provided:{error}')
@@ -259,7 +257,7 @@ class SessionProcessorSerializer(serializers.Serializer):
         session_instance = AssessmentSession.objects.get(session_id=session)
 
         result, created = Result.objects.get_or_create(assessment=session_instance.assessment,
-                                                       candidate=session_instance.candidate)
+                                                       candidate=session_instance.candidate, status=RESULT_CONST['inconclusive'])
         correct_score = Session_Answer.objects.filter(session=session_instance, question_type='Multi-choice',
                                                       is_correct=True)
         session_category = Category_Result(result=result, category=session_instance.category, status='TAKEN',
@@ -347,3 +345,25 @@ class AssessmentFeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssessmentFeedback
         fields = ('assessment', 'applicant_info', 'feedback')
+
+
+class CandidateCategoryResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category_Result
+        fields = ('category', 'score', 'status')
+
+
+class CandidateResultSerializer(serializers.ModelSerializer):
+    category_info = CandidateCategoryResultSerializer(many=True)
+
+    class Meta:
+        model = Result
+        fields = ('candidate', 'is_active', 'status', 'result_status', 'total', 'applicant_info', 'category_info')
+        extra_kwargs = {'category_info': {'read_only': True}}
+
+    def get_status(self):
+        return 'testing'
+    # def get_category(self, obj):
+    #     category_result = Category_Result.objects.filter(result=obj)
+    #     print(category_result)
+    #     return category_result

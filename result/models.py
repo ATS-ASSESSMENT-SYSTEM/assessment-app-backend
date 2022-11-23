@@ -30,6 +30,14 @@ class Result(models.Model):
     def __str__(self) -> str:
         return f'{self.candidate} result for {self.assessment}'
 
+    def category_info(self):
+        return self.category_result_set.all()
+
+    @property
+    def result_status(self) -> str:
+        categories = Category_Result.objects.filter(result_id=self.id)
+        cat = []
+
     class Meta:
         unique_together = ('assessment', 'candidate')
 
@@ -38,7 +46,8 @@ class Category_Result(models.Model):
     STATUS = (
         ("STARTED", "STARTED"),
         ("NOT-STARTED", "NOT-STARTED"),
-        ("TAKEN", "TAKEN")
+        ("TAKEN", "TAKEN"),
+
     )
 
     result = models.ForeignKey(Result, on_delete=models.CASCADE)
