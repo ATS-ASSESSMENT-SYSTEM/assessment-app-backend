@@ -84,10 +84,7 @@ class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, RetrieveUpda
     renderer_classes = (CustomRenderer,)
     lookup_fields = ('test_category_id', 'id')
     
-    def get_queryset(self):
-        category_id = self.kwargs.get('test_category_id')
-        return Question.objects.filter(test_category__pk=category_id)
-    
+
     
 class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = ChoiceSerializer

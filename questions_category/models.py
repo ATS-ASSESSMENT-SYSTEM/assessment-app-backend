@@ -67,14 +67,13 @@ class Choice(models.Model):
     def __str__(self):
         return self.choice_text
 
-    def __str__(self):
-        return self.choice_text
-
 
 class OpenEndedAnswer(models.Model):
     question = models.ForeignKey(Question, related_name="answer", on_delete=models.CASCADE)
     candidate = models.CharField(max_length=150, null=True, blank=True)
     answer_text = models.TextField()
     is_correct = models.BooleanField(default=False)
+    is_marked = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)

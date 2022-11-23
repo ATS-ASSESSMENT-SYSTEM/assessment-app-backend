@@ -14,7 +14,7 @@ from assessment.models import AssessmentSession
 
 from .api.serializers import ResultSerializer, CandidateResultSerializer, SessionAnswerSerializer, \
     SessionProcessorSerializer, AssessmentImageSerializer, ResultListSerializer, AssessmentMediaSerializer, \
-AssessmentFeedbackSerializer
+    AssessmentFeedbackSerializer, CandidateResultSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
 
@@ -32,10 +32,6 @@ class AddResultSummaryAPIView(APIView):
 class CandidatesResultAPIView(ListAPIView):
     filter_backends = [DjangoFilterBackend]
 
-
-class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
-    serializer_class = CandidateResultSerializer
-    renderer_classes = (CustomRenderer,)
     # lookup_field = ('candidate', 'id')
 
     # def get_queryset(self):
@@ -105,3 +101,11 @@ class AssessmentMediaAPIView(CreateAPIView):
 class AssessmentFeedbackAPIView(CreateAPIView):
     serializer_class = AssessmentFeedbackSerializer
     renderer_classes = (CustomRenderer,)
+
+
+class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Result.objects.all()
+    serializer_class = CandidateResultSerializer
+    renderer_classes = (CustomRenderer,)
+
+
