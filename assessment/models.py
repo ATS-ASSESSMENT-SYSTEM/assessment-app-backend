@@ -40,6 +40,7 @@ class Assessment(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     benchmark = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)], null=True, blank=True)
+    total_duration = models.IntegerField(null=True)
     is_delete = models.BooleanField(default=False)
 
     objects = models.Manager()
