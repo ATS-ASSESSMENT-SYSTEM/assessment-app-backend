@@ -54,7 +54,7 @@ class ApplicationTypeSerializer(ModelSerializer):
 
 
 class StartAssessmentSerializer(serializers.Serializer):
-    applicant_id = serializers.CharField()
+    candidate = serializers.CharField()
     device = serializers.CharField()
     browser = serializers.CharField()
     location = serializers.CharField()

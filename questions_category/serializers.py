@@ -92,17 +92,12 @@ class QuestionSerializer(serializers.ModelSerializer):
             category = Category.objects.get(pk=category_pk)
             choices = validated_data.get('choices')
             if choices:
-                obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
-                                              question_category=validated_data['question_category'],
-                                              question_text=validated_data['question_text'],
-                                              question_hint=validated_data['question_hint'])
+                validated_data.pop('choices')
+                obj = Question.objects.create(test_category=category, **validated_data)
                 for choice in choices:
                     Choice.objects.create(question=obj, **choice)
                 return obj
-            obj = Question.objects.create(test_category=category, question_type=validated_data['question_type'],
-                                          question_category=validated_data['question_category'],
-                                          question_text=validated_data['question_text'],
-                                          question_hint=validated_data['question_hint'])
+            obj = Question.objects.create(test_category=category, **validated_data)
 
             return obj
         except Category.DoesNotExist:
