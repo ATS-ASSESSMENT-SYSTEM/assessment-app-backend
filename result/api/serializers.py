@@ -82,7 +82,7 @@ class ResultSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # ask:  why am i getting ordered dict
+        # ask:  why am I getting ordered dict
 
         assessment = Assessment.objects.get(
             name=validated_data.get('assessment'))
@@ -260,8 +260,15 @@ class SessionProcessorSerializer(serializers.Serializer):
                                                        candidate=session_instance.candidate, status=RESULT_CONST['inconclusive'])
         correct_score = Session_Answer.objects.filter(session=session_instance, question_type='Multi-choice',
                                                       is_correct=True)
+
+        has_open_ended_answer = OpenEndedAnswer.objects.filter(candidate=session_instance.candidate,
+                                                               category=session_instance.category)
+        if has_open_ended_answer.count() > 0:
+            has_open_ended_answer = True
+
         session_category = Category_Result(result=result, category=session_instance.category, status='TAKEN',
-                                           score=correct_score.count()
+                                           score=correct_score.count(),
+                                           has_open_ended_answer=has_open_ended_answer
                                            )
         session_category.save()
         # correct_score.delete()

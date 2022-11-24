@@ -1,8 +1,9 @@
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
+from django.db.models import Sum
 
 from assessment.models import Assessment, AssessmentSession
-from questions_category.models import Category, Question, Choice
+from questions_category.models import Category, Question, Choice, OpenEndedAnswer
 
 
 def call_json(type_: str):
@@ -15,7 +16,6 @@ class Result(models.Model):
     STATUS = (
         ("Passed", "PASSED"),
         ("Failed", "FAILED"),
-        ('Not_taken', "NOT_TAKEN"),
         ('Inconclusive', "INCONCLUSIVE")
     )
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
@@ -23,7 +23,7 @@ class Result(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    status = models.CharField(max_length=150, choices=STATUS, default='Not_taken')
+    status = models.CharField(max_length=150, choices=STATUS, default='Inconclusive')
     total = models.IntegerField(default=0)
     applicant_info = models.JSONField(default=call_json(type_='dict'), null=True, blank=True)
 
@@ -35,8 +35,17 @@ class Result(models.Model):
 
     @property
     def result_status(self) -> str:
-        categories = Category_Result.objects.filter(result_id=self.id)
-        cat = []
+        category_check = Category_Result.objects.filter(result_id=self.id)
+        if category_check.exclude(has_open_ended=True).exists():
+            opa_check = OpenEndedAnswer.object.filter(category__in=category_check)
+            if opa_check.exclude(is_marked=False):
+                return 'Inconclusive'
+
+    @property
+    def result_total(self)-> int:
+        return Category_Result.objects.filter(result_id=self.id).\
+            aggregate(Sum('score'))
+
 
     class Meta:
         unique_together = ('assessment', 'candidate')
@@ -55,6 +64,7 @@ class Category_Result(models.Model):
     score = models.IntegerField()
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+    has_open_ended = models.BooleanField(default=False)
     status = models.CharField(max_length=100, choices=STATUS, default="NOT-STARTED")
 
     def __str__(self) -> str:
