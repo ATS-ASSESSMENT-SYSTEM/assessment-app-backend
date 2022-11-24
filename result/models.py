@@ -24,7 +24,6 @@ class Result(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     status = models.CharField(max_length=150, choices=STATUS, default='Inconclusive')
-    total = models.IntegerField(default=0)
     applicant_info = models.JSONField(default=call_json(type_='dict'), null=True, blank=True)
 
     def __str__(self) -> str:
@@ -36,36 +35,58 @@ class Result(models.Model):
     @property
     def result_status(self) -> str:
         category_check = Category_Result.objects.filter(result_id=self.id)
+        print(1, category_check)
         if category_check.exclude(has_open_ended=True).exists():
-            opa_check = OpenEndedAnswer.object.filter(category__in=category_check)
+            print('Entered exists')
+            opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk'))
+            print(opa_check, opa_check.exclude(is_marked=False))
             if opa_check.exclude(is_marked=False):
                 return 'Inconclusive'
 
+        assessment = Assessment.objects.get(pk=self.assessment.pk)
+        assessment_benchmark = assessment.benchmark
+        print(assessment)
+        if assessment_benchmark > self.result_total:
+            return 'Failed'
+
+        if assessment_benchmark < self.result_total:
+            return 'Passed'
+
+        return 'Still Processing'
+
     @property
-    def result_total(self)-> int:
-        return Category_Result.objects.filter(result_id=self.id).\
+    def result_total(self) -> int:
+        return Category_Result.objects.filter(result_id=self.id). \
             aggregate(Sum('score'))
 
+    @property
+    def duration(self):
+        print(self.candidate, self.id)
+        sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate=self.candidate)\
+            .order_by('date_created')
+        print(sessions.first())
+        # return  sessions.first().date_created
+        return {
+            "time_started": sessions.first().date_created,
+            "time_ended": sessions.last().date_created
+        }
+
+    # @property
+    # def percentage_total(self):
+    #         mark_obtainable = Category.objects.filter()
 
     class Meta:
         unique_together = ('assessment', 'candidate')
 
 
 class Category_Result(models.Model):
-    STATUS = (
-        ("STARTED", "STARTED"),
-        ("NOT-STARTED", "NOT-STARTED"),
-        ("TAKEN", "TAKEN"),
-
-    )
-
     result = models.ForeignKey(Result, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     score = models.IntegerField()
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     has_open_ended = models.BooleanField(default=False)
-    status = models.CharField(max_length=100, choices=STATUS, default="NOT-STARTED")
+    status = models.CharField(max_length=100, default="TAKEN")
 
     def __str__(self) -> str:
         return f'{self.result} result for {self.category}'

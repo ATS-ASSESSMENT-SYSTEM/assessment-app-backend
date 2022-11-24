@@ -53,8 +53,6 @@ class Question(models.Model):
     def session_answer(self):
         return self.session_answer_set.all()
 
-    def session_answer(self):
-        return self.session_answer_set.all()
 
 
 class Choice(models.Model):

@@ -7,7 +7,7 @@ from django.db.models import Exists
 
 from result.models import Result, Category_Result, Session_Answer, AssessmentImages, AssessmentMedia, AssessmentFeedback
 from assessment.models import Assessment, AssessmentSession
-from questions_category.models import Category, OpenEndedAnswer
+from questions_category.models import Category, OpenEndedAnswer, Question
 
 RESULT_CONST = {
     "passed": "Passed",
@@ -204,7 +204,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                                                                      'candidate')})
                     return session_answer_instance
                 new_session_answer = Session_Answer(**validated_data,
-                                                    time_remaining=session_remaining_time, question_type='Open-ended',)
+                                                    time_remaining=session_remaining_time, question_type='Open-ended', )
 
                 save_op_answer = OpenEndedAnswer(question=validated_data.get('question'),
                                                  candidate=validated_data.get('candidate'),
@@ -257,7 +257,8 @@ class SessionProcessorSerializer(serializers.Serializer):
         session_instance = AssessmentSession.objects.get(session_id=session)
 
         result, created = Result.objects.get_or_create(assessment=session_instance.assessment,
-                                                       candidate=session_instance.candidate, status=RESULT_CONST['inconclusive'])
+                                                       candidate=session_instance.candidate,
+                                                       status=RESULT_CONST['Inconclusive'])
         correct_score = Session_Answer.objects.filter(session=session_instance, question_type='Multi-choice',
                                                       is_correct=True)
 
@@ -266,7 +267,7 @@ class SessionProcessorSerializer(serializers.Serializer):
         if has_open_ended_answer.count() > 0:
             has_open_ended_answer = True
 
-        session_category = Category_Result(result=result, category=session_instance.category, status='TAKEN',
+        session_category = Category_Result(result=result, category=session_instance.category,
                                            score=correct_score.count(),
                                            has_open_ended_answer=has_open_ended_answer
                                            )
@@ -354,10 +355,30 @@ class AssessmentFeedbackSerializer(serializers.ModelSerializer):
         fields = ('assessment', 'applicant_info', 'feedback')
 
 
+class OpenEndedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpenEndedAnswer
+        fields = ("is_correct", "answer_text", "is_marked", "category")
+
+
 class CandidateCategoryResultSerializer(serializers.ModelSerializer):
+    no_of_questions = serializers.SerializerMethodField()
+    percentage_mark = serializers.SerializerMethodField()
+    open_ended_questions = serializers.SerializerMethodField()
+
     class Meta:
         model = Category_Result
-        fields = ('category', 'score', 'status')
+        fields = ('category', 'score', 'status', 'no_of_questions', 'percentage_mark', 'open_ended_questions')
+
+    def get_no_of_questions(self, objs):
+        return Question.objects.filter(test_category_id=objs.category.pk).count()
+
+    def get_percentage_mark(self, objs):
+        return (objs.score / self.get_no_of_questions(objs)) * 100
+
+    def get_open_ended_questions(self, objs):
+        opa_answer = OpenEndedAnswer.objects.filter(candidate=objs.result.candidate, category=objs.category)
+        return OpenEndedSerializer(opa_answer, many=True).data
 
 
 class CandidateResultSerializer(serializers.ModelSerializer):
@@ -365,11 +386,10 @@ class CandidateResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Result
-        fields = ('candidate', 'is_active', 'status', 'result_status', 'total', 'applicant_info', 'category_info')
+        fields = (
+            'candidate', 'is_active', 'result_status', 'duration', 'result_total', 'applicant_info', 'category_info')
         extra_kwargs = {'category_info': {'read_only': True}}
 
-    def get_status(self):
-        return 'testing'
     # def get_category(self, obj):
     #     category_result = Category_Result.objects.filter(result=obj)
     #     print(category_result)
