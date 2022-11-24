@@ -10,7 +10,6 @@ from django.utils import timezone
 
 
 class Category(models.Model):
-    assessment = models.ManyToManyField('assessment.Assessment', limit_choices_to={'is_delete': False})
     category_info = models.TextField()
     name = models.CharField(max_length=150)
     test_duration = models.TimeField(default=datetime.time(00, 10, 00))
@@ -36,10 +35,10 @@ class Question(models.Model):
         ("Open-ended", "Open-ended")
     )
 
-    test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    test_category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='questions')
     question_text = models.TextField()
     question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
-    question_categories = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
+    question_category = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     question_hint = models.TextField(null=True, blank=True)
@@ -53,7 +52,10 @@ class Question(models.Model):
     def session_answer(self):
         return self.session_answer_set.all()
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 948cd051db879a9004d9faab6f9b15532bfceab4
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)

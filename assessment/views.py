@@ -1,10 +1,12 @@
+from datetime import datetime
+
 from django.shortcuts import render
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
-
 
 from assessment.models import Assessment, ApplicationType, AssessmentSession
 from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer, \
@@ -51,13 +53,13 @@ class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
         except (Assessment.DoesNotExist, Category.DoesNotExist):
             raise ValidationError('Assessment or The Category does not exist.')
         else:
-            if assessment not in category.assessment.all():
-                category.assessment.add(assessment)
-                category.save()
+            if category not in assessment.category.all():
+                assessment.category.add(category)
+                assessment.save()
                 return Response({'status': 'Success', 'message': 'Category added successfully.'})
             else:
-                category.assessment.remove(assessment)
-                category.save()
+                assessment.category.remove(category)
+                assessment.save()
                 return Response({'status': 'Success', 'message': 'Category removed'})
 
 
@@ -67,39 +69,44 @@ class GenerateRandomQuestions(generics.CreateAPIView):
 
     def post(self, request, assessment_id, category_id):
         serializer = self.get_serializer(data=request.data)
-        print(assessment_id)
-        print(category_id)
         if serializer.is_valid():
             try:
                 assessment = Assessment.objects.get(id=assessment_id)
-                print(assessment)
                 category = Category.objects.get(id=category_id)
-                print(category)
                 current_session = AssessmentSession.objects.filter(assessment=assessment, category=category,
-                                                           candidate=serializer.data.get('applicant_id'))
+                                                                   candidate_id=serializer.data.get('candidate_id'))
+                check_session = AssessmentSession.objects.filter(assessment=assessment,
+                                                                 candidate_id=serializer.data.get('candidate_id')).order_by(
+                    'date_created')
+
+                if check_session.exists():
+                    if ((
+                                timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                        return Response({'error': "Your assessment session has expired."}, status=status.HTTP_403_FORBIDDEN)
+
                 if current_session.exists():
                     questions = current_session.first().question_list.all()
                     session = current_session.first()
                 else:
-                    questions = Question.objects.filter(test_category__assessment=assessment,
-                                                        test_category=category, question_categories="Real").order_by('?')[
-                                :category.num_of_questions]
                     session = AssessmentSession.objects.create(assessment=assessment,
-                                                               category=category,
-                                                               candidate=serializer.data['applicant_id'],
-                                                               device=serializer.data['device'],
-                                                               browser=serializer.data['browser'],
-                                                               enable_webcam=serializer.data['enable_webcam'],
-                                                               location=serializer.data['location'],
-                                                               full_screen_active=serializer.data[
-                                                                   'full_screen_active'])
-                    for question in category.question_set.all():
+                                                               category=category, **serializer.data)
+
+                    questions = Question.objects.filter(test_category__assessment=assessment,
+                                                        test_category=category,
+                                                        question_category="Real").order_by(
+                        '?')[
+                                :category.num_of_questions]
+
+                    for question in category.questions.all():
                         session.question_list.add(question)
+
+                q = GenerateQuestionSerializer(questions, many=True)
+                return Response({'session_id': session.session_id, 'questions': q.data},
+                                status=status.HTTP_200_OK)
+
             except (Assessment.DoesNotExist, Category.DoesNotExist):
                 raise ValidationError('Assessment or the category does not exist.')
-            else:
-                q = GenerateQuestionSerializer(questions, many=True)
-                return Response({'session_id': session.session_id,'questions': q.data}, status=status.HTTP_200_OK)
+
         return Response({'error': serializer.errors})
 
 

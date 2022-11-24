@@ -102,10 +102,12 @@ class AssessmentFeedbackAPIView(CreateAPIView):
     serializer_class = AssessmentFeedbackSerializer
     renderer_classes = (CustomRenderer,)
 
-
 class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
     serializer_class = CandidateResultSerializer
+    renderer_classes = (CustomRenderer,)
+
+class MarkOpenEndedSerializer(APIView):
     renderer_classes = (CustomRenderer,)
 
 
