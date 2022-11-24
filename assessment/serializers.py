@@ -6,12 +6,24 @@ from assessment.models import Assessment, ApplicationType, AssessmentSession
 from questions_category.models import Category
 
 
+class CategorySerializer(ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = ('id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date')
+        extra_kwargs = {
+            'created_date': {'read_only': True},
+            'updated_date': {'read_only': True},
+            'id': {'read_only': True},
+        }
+
+
 class AssessmentSerializer(ModelSerializer):
-    categories = HyperlinkedIdentityField(view_name="category-list-view", format='html', )
+    categories = CategorySerializer(many=True, required=False)
 
     class Meta:
         model = Assessment
-        fields = ("name", "application_type", "benchmark", "date_created", "date_updated", "categories")
+        fields = ("id", "name", "assessment_info", "total_duration", "application_type", "benchmark", "date_created", "date_updated", "categories")
 
     extra_kwargs = {
         'created_date': {'read_only': True},
@@ -20,29 +32,20 @@ class AssessmentSerializer(ModelSerializer):
 
     def validate(self, attrs):
         assessment_name = attrs.get('name')
+
+        if not attrs.get('assessment_info'):
+            raise serializers.ValidationError('assessment_info must be provided.')
+
+        if not attrs.get('total_duration'):
+            raise serializers.ValidationError('total_duration must be provided.')
+
+        if not attrs.get('benchmark'):
+            raise serializers.ValidationError('benchmark must be provided.')
+
         if Assessment.objects.filter(name__iexact=assessment_name).exists():
             raise serializers.ValidationError('Assessment with the same name already exist.')
 
         return attrs
-
-    def validate_benchmark(self, value):
-        if value < 0 or value > 100:
-            raise serializers.ValidationError('Benchmark must be between  0 and 100')
-
-        return value
-
-
-class CategorySerializer(ModelSerializer):
-    questions = serializers.HyperlinkedIdentityField(view_name='question-list-view', format='html')
-
-    class Meta:
-        model = Category
-        fields = ('id', 'name', 'category_info', 'questions', 'created_date', 'updated_date')
-        extra_kwargs = {
-            'created_date': {'read_only': True},
-            'updated_date': {'read_only': True},
-            'id': {'read_only': True},
-        }
 
 
 class ApplicationTypeSerializer(ModelSerializer):
@@ -54,7 +57,7 @@ class ApplicationTypeSerializer(ModelSerializer):
 
 
 class StartAssessmentSerializer(serializers.Serializer):
-    candidate = serializers.CharField()
+    candidate_id = serializers.CharField()
     device = serializers.CharField()
     browser = serializers.CharField()
     location = serializers.CharField()

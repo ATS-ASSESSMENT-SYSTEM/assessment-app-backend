@@ -89,7 +89,7 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 2
+    'PAGE_SIZE': 30
 }
 
 WSGI_APPLICATION = 'app_core.wsgi.application'
@@ -139,7 +139,7 @@ TIME_ZONE = 'Africa/Lagos'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

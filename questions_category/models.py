@@ -10,7 +10,6 @@ from django.utils import timezone
 
 
 class Category(models.Model):
-    assessment = models.ManyToManyField('assessment.Assessment', limit_choices_to={'is_delete': False})
     category_info = models.TextField()
     name = models.CharField(max_length=150)
     test_duration = models.TimeField(default=datetime.time(00, 10, 00))
@@ -36,7 +35,7 @@ class Question(models.Model):
         ("Open-ended", "Open-ended")
     )
 
-    test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    test_category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='questions')
     question_text = models.TextField()
     question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
     question_category = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')

@@ -5,40 +5,12 @@ from result.models import Session_Answer
 from .models import Category, Question, Choice
 
 
-class AssessmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Assessment
-        fields = ('name',)
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    questions = serializers.HyperlinkedIdentityField(
-        view_name='question-list-view', format='html')
-
-    class Meta:
-        model = Category
-        fields = ('id', 'name', 'category_info', 'questions', 'test_duration', 'created_date', 'updated_date')
-
-        extra_kwargs = {
-            'created_date': {'read_only': True},
-            'updated_date': {'read_only': True},
-            'id': {'read_only': True},
-        }
-
-    def validate(self, attrs):
-        category_name = attrs.get('name')
-        if Category.objects.filter(name__iexact=category_name).exists():
-            raise serializers.ValidationError('Category with the same name already exist.')
-
-        return attrs
-
-
 class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
         fields = ('id', 'choice_text', 'is_correct')
-        
-        
+
+
 class SessionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session_Answer
@@ -105,10 +77,26 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         choices = validated_data.get('choices')
+        question_type = validated_data.get('question_type')
+        question_text = validated_data.get('question_text')
+        category_pk = self.context['request'].parser_context.get('kwargs').get('test_category_id')
+
+        if Question.objects.filter(question_text__iexact=question_text,
+                                   test_category__pk=category_pk).exists():
+            raise serializers.ValidationError('The question already exist in the category.')
+
+        if question_type == 'Open-ended':
+            if instance.question_type == 'Multi-choice':
+                raise serializers.ValidationError("You can't swap the question type.")
+
+        if question_type == 'Multi-choice':
+            if instance.question_type == 'Open-ended':
+                raise serializers.ValidationError("You can't swap the question type.")
+
         if choices:
             validated_data.pop('choices')
         return super().update(instance, validated_data)
-    
+
 
 class GenerateQuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
@@ -118,3 +106,24 @@ class GenerateQuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = ('id', 'question_text', 'question_type', 'question_category', 'question_hint', 'choices',
                   'session_answer')
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, required=False)
+
+    class Meta:
+        model = Category
+        fields = ('id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date', 'questions')
+
+        extra_kwargs = {
+            'created_date': {'read_only': True},
+            'updated_date': {'read_only': True},
+            'id': {'read_only': True},
+        }
+
+    def validate(self, attrs):
+        category_name = attrs.get('name')
+        if Category.objects.filter(name__iexact=category_name).exists():
+            raise serializers.ValidationError('Category with the same name already exist.')
+
+        return attrs

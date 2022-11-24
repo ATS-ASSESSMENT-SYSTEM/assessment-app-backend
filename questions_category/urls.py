@@ -6,6 +6,7 @@ from .views import (
     UpdateChoiceAPIView
 )
 
+app_name = "questions-category"
 
 urlpatterns = [
     path('', CategoryListCreateAPIView.as_view(), name='category-list-create-view'),

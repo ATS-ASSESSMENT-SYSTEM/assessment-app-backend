@@ -35,6 +35,7 @@ class ApplicationType(models.Model):
 
 
 class Assessment(models.Model):
+    category = models.ManyToManyField(Category)
     assessment_info = models.TextField(null=True)
     name = models.CharField(max_length=200)
     application_type = models.ForeignKey(ApplicationType, on_delete=models.CASCADE)
@@ -54,13 +55,16 @@ class Assessment(models.Model):
     class Meta:
         ordering = ["-date_created"]
 
+    def categories(self):
+        return self.category.all()
+
 
 class AssessmentSession(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     session_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_list = models.ManyToManyField(Question)
-    candidate = models.CharField(max_length=200)
+    candidate_id = models.CharField(max_length=200)
     date_created = models.DateTimeField(auto_now_add=True, null=True)
     date_updated = models.DateTimeField(auto_now=True, null=True)
     device = models.CharField(max_length=200, null=True)
@@ -68,3 +72,6 @@ class AssessmentSession(models.Model):
     location = models.CharField(max_length=200, null=True)
     enable_webcam = models.BooleanField(default=False, null=True)
     full_screen_active = models.BooleanField(default=False, null=True)
+
+    class Meta:
+        ordering = ["-date_created"]
