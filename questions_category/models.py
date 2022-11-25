@@ -52,10 +52,6 @@ class Question(models.Model):
     def session_answer(self):
         return self.session_answer_set.all()
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 948cd051db879a9004d9faab6f9b15532bfceab4
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)

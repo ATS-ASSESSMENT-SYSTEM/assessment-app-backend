@@ -45,12 +45,12 @@ class Result(models.Model):
 
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark
-        print(assessment)
-        if assessment_benchmark > self.result_total:
-            return 'Failed'
-
-        if assessment_benchmark < self.result_total:
-            return 'Passed'
+        print(assessment_benchmark, self.result_total)
+        # if assessment_benchmark > self.result_total:
+        #     return 'Failed'
+        #
+        # if assessment_benchmark < self.result_total:
+        #     return 'Passed'
 
         return 'Still Processing'
 
@@ -62,7 +62,7 @@ class Result(models.Model):
     @property
     def duration(self):
         print(self.candidate, self.id)
-        sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate=self.candidate)\
+        sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate)\
             .order_by('date_created')
         print(sessions.first())
         # return  sessions.first().date_created
