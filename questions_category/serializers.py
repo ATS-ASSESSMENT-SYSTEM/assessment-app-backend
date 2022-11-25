@@ -22,12 +22,11 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'question_hint', 'choices')
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices')
 
     def validate(self, attrs):
         choices = attrs.get('choices')
         category_pk = self.context['request'].parser_context.get('kwargs').get('pk')
-        question_hint = attrs.get('question_hint')
         question_type = attrs.get('question_type')
         question_category = attrs.get('question_category')
 
@@ -36,9 +35,6 @@ class QuestionSerializer(serializers.ModelSerializer):
 
         if not question_category:
             raise serializers.ValidationError('question_category must be provided.')
-
-        if not question_hint:
-            raise serializers.ValidationError('question_hint must be provided.')
 
         if question_type == 'Multi-choice':
             if not choices:
@@ -115,7 +111,7 @@ class GenerateQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'question_hint', 'choices',
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices',
                   'session_answer')
 
 

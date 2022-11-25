@@ -42,7 +42,6 @@ class Question(models.Model):
     question_category = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    question_hint = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.question_text
