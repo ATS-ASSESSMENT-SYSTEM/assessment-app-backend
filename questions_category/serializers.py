@@ -22,12 +22,11 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'question_hint', 'choices')
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices')
 
     def validate(self, attrs):
         choices = attrs.get('choices')
         category_pk = self.context['request'].parser_context.get('kwargs').get('pk')
-        question_hint = attrs.get('question_hint')
         question_type = attrs.get('question_type')
         question_category = attrs.get('question_category')
 
@@ -37,15 +36,19 @@ class QuestionSerializer(serializers.ModelSerializer):
         if not question_category:
             raise serializers.ValidationError('question_category must be provided.')
 
-        if not question_hint:
-            raise serializers.ValidationError('question_hint must be provided.')
-
         if question_type == 'Multi-choice':
             if not choices:
-                raise serializers.ValidationError('choices must be provided.')
+                raise serializers.ValidationError('choices field must be provided.')
 
             if len(choices) < 2:
                 raise serializers.ValidationError('Choices must be 2 at least')
+
+        if question_type == 'Multi-response':
+            if not choices:
+                raise serializers.ValidationError('choices field must be provided.')
+
+            if len(choices) < 3:
+                raise serializers.ValidationError('Choices must be 3 at least')
 
         if question_type == 'Open-ended':
             if choices:
@@ -86,11 +89,15 @@ class QuestionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('The question already exist in the category.')
 
         if question_type == 'Open-ended':
-            if instance.question_type == 'Multi-choice':
+            if instance.question_type == 'Multi-choice' or instance.question_type == 'Multi_response':
                 raise serializers.ValidationError("You can't swap the question type.")
 
         if question_type == 'Multi-choice':
-            if instance.question_type == 'Open-ended':
+            if instance.question_type == 'Open-ended' or instance.question_type == 'Multi_response':
+                raise serializers.ValidationError("You can't swap the question type.")
+
+        if question_type == 'Multi-response':
+            if instance.question_type == 'Open-ended' or instance.question_type == 'Multi_choice':
                 raise serializers.ValidationError("You can't swap the question type.")
 
         if choices:
@@ -104,7 +111,7 @@ class GenerateQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'question_hint', 'choices',
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices',
                   'session_answer')
 
 
