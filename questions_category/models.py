@@ -57,7 +57,7 @@ class Question(models.Model):
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
     choice_text = models.CharField(max_length=255)
-    is_correct = models.BooleanField(default=False)
+    is_correct = models.BooleanField()
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     

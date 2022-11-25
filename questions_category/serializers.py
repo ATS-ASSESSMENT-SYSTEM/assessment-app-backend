@@ -42,14 +42,14 @@ class QuestionSerializer(serializers.ModelSerializer):
 
         if question_type == 'Multi-choice':
             if not choices:
-                raise serializers.ValidationError('choices must be provided.')
+                raise serializers.ValidationError('choices field must be provided.')
 
             if len(choices) < 2:
                 raise serializers.ValidationError('Choices must be 2 at least')
 
         if question_type == 'Multi-response':
             if not choices:
-                raise serializers.ValidationError('choices must be provided.')
+                raise serializers.ValidationError('choices field must be provided.')
 
             if len(choices) < 3:
                 raise serializers.ValidationError('Choices must be 3 at least')
