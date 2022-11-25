@@ -72,3 +72,4 @@ class OpenEndedAnswer(models.Model):
     is_marked = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)

@@ -32,6 +32,7 @@ SECRET_KEY = 'django-insecure-lkno=6=ntjrt5b6i1l#!c4@5@076=t*(_s(42p(2u2(ridz+((
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = ['assessbk.afexats.com', 'localhost', '127.0.0.1']
 
 
@@ -165,10 +166,12 @@ MEDIA_URL = 'media/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'app_core/static')]
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
 CORS_ALLOWED_ORIGINS = ['http://assessbk.afexats.com',
                         'http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000',
                         'http://127.0.0.1:8000']
 CORS_ALLOW_CREDENTIALS = True
+
 
 
 
