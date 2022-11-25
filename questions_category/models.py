@@ -32,7 +32,8 @@ class Question(models.Model):
 
     TYPES = (
         ("Multi-choice", "Multi-choice"),
-        ("Open-ended", "Open-ended")
+        ("Open-ended", "Open-ended"),
+        ("Multi-response", "Multi-response")
     )
 
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='questions')

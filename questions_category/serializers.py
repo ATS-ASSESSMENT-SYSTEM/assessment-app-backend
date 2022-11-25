@@ -47,6 +47,13 @@ class QuestionSerializer(serializers.ModelSerializer):
             if len(choices) < 2:
                 raise serializers.ValidationError('Choices must be 2 at least')
 
+        if question_type == 'Multi-response':
+            if not choices:
+                raise serializers.ValidationError('choices must be provided.')
+
+            if len(choices) < 3:
+                raise serializers.ValidationError('Choices must be 2 at least')
+
         if question_type == 'Open-ended':
             if choices:
                 raise serializers.ValidationError('Open ended question have no choices')
@@ -86,11 +93,15 @@ class QuestionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('The question already exist in the category.')
 
         if question_type == 'Open-ended':
-            if instance.question_type == 'Multi-choice':
+            if instance.question_type == 'Multi-choice' or instance.question_type == 'Multi_response':
                 raise serializers.ValidationError("You can't swap the question type.")
 
         if question_type == 'Multi-choice':
-            if instance.question_type == 'Open-ended':
+            if instance.question_type == 'Open-ended' or instance.question_type == 'Multi_response':
+                raise serializers.ValidationError("You can't swap the question type.")
+
+        if question_type == 'Multi-response':
+            if instance.question_type == 'Open-ended' or instance.question_type == 'Multi_choice':
                 raise serializers.ValidationError("You can't swap the question type.")
 
         if choices:
