@@ -52,7 +52,7 @@ class QuestionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('choices must be provided.')
 
             if len(choices) < 3:
-                raise serializers.ValidationError('Choices must be 2 at least')
+                raise serializers.ValidationError('Choices must be 3 at least')
 
         if question_type == 'Open-ended':
             if choices:
