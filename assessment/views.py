@@ -120,3 +120,10 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
+
+    def delete(self, request, applicationtype_id):
+        
+        try:
+            ApplicationType = ApplicationType.active_objects.get(id=applicationtype_id)
+        except (ApplicationType.DoesNotExist):
+            raise ValidationError('applicationtype does not exist.')
