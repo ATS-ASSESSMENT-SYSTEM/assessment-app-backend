@@ -111,7 +111,7 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                         '?')[
                                 :category.num_of_questions]
 
-                    for question in category.question_set.all():
+                    for question in questions:
                         session.question_list.add(question)
 
                 q = GenerateQuestionSerializer(questions, many=True)
