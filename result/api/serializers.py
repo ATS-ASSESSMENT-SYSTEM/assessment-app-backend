@@ -140,8 +140,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
         print("validate=>", validated_data)
         try:
             session_remaining_time = validated_data.pop('time_remaining')
-            if validated_data.get('is_correct'):
-                is_correct_value = validated_data.pop('is_correct')
+
             question_type = validated_data.pop('question_type')
 
             if question_type == 'Open-ended':
@@ -184,6 +183,8 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 return new_session_answer
 
             if question_type == "Multi-choice":
+
+                is_correct_value = validated_data.pop('is_correct')
                 if session_answer.exists():
                     session_answer_instance = session_answer.first()
                     session_answer_instance.is_correct = is_correct_value
@@ -263,23 +264,24 @@ class SessionProcessorSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         session = validated_data.get('session_id')
+   
         session_instance = AssessmentSession.objects.get(session_id=session)
 
         result, created = Result.objects.get_or_create(assessment=session_instance.assessment,
                                                        candidate=session_instance.candidate_id, )
+
         correct_score = Session_Answer.objects.filter(Q(question_type='Multi-choice') |
                                                       Q(question_type='Multi-response'),
-                                                      session=session_instance, is_correct=True, )
-
+                                                      session_id=session, is_correct=True)
         has_open_ended_answer = OpenEndedAnswer.objects.filter(candidate=session_instance.candidate_id,
                                                                category=session_instance.category)
-        if has_open_ended_answer.count() > 0:
-            has_open_ended_answer = True
 
-        session_category = Category_Result(result=result, category=session_instance.category,
-                                           score=correct_score.count(),
-                                           has_open_ended=has_open_ended_answer
-                                           )
+        has_open_ended = bool(has_open_ended_answer.count())
+
+        session_category = Category_Result.objects.create(result_id=result.pk, category=session_instance.category,
+                                                          score=correct_score.count(),
+                                                          has_open_ended=has_open_ended
+                                                          )
         session_category.save()
         # correct_score.delete()
         # session_instance.delete()
@@ -392,7 +394,6 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
 class CandidateResultSerializer(serializers.ModelSerializer):
     category_info = CandidateCategoryResultSerializer(many=True)
 
-
     class Meta:
         model = Result
         fields = (
@@ -401,7 +402,6 @@ class CandidateResultSerializer(serializers.ModelSerializer):
         extra_kwargs = {'category_info': {'read_only': True},
 
                         }
-
 
 
 class ProcessOpenEndedAnswerSerializer(serializers.Serializer):
