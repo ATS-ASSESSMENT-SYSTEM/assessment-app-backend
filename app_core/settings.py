@@ -33,7 +33,7 @@ SECRET_KEY = 'django-insecure-lkno=6=ntjrt5b6i1l#!c4@5@076=t*(_s(42p(2u2(ridz+((
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['assessbk.afexats.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['assessbk.afexats.com', 'localhost', '127.0.0.1', 'https://afex-ats-assessment.netlify.app/']
 
 
 # Application definition
@@ -169,7 +169,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CORS_ALLOWED_ORIGINS = ['http://assessbk.afexats.com',
                         'http://localhost:3000', 'http://localhost:8000', 'http://127.0.0.1:3000',
-                        'http://127.0.0.1:8000']
+                        'http://127.0.0.1:8000',
+                        'https://afex-ats-assessment.netlify.app/'
+                        ]
 CORS_ALLOW_CREDENTIALS = True
 
 
