@@ -54,7 +54,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             if choices:
                 raise serializers.ValidationError('Open ended question have no choices')
 
-        if Question.objects.filter(question_text__iexact=attrs.get('question_text'),
+        if Question.active_objects.filter(question_text__iexact=attrs.get('question_text'),
                                    test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
@@ -84,7 +84,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         question_text = validated_data.get('question_text')
         category_pk = self.context['request'].parser_context.get('kwargs').get('test_category_id')
 
-        if Question.objects.filter(question_text__iexact=question_text,
+        if Question.active_objects.filter(question_text__iexact=question_text,
                                    test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
@@ -138,7 +138,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         category_name = attrs.get('name')
-        if Category.objects.filter(name__iexact=category_name).exists():
+        if Category.active_objects.filter(name__iexact=category_name).exists():
             raise serializers.ValidationError('Category with the same name already exist.')
 
         return attrs
