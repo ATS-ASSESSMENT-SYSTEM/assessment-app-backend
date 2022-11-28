@@ -8,6 +8,15 @@ from django.utils import timezone
 
 # from assessment.models import Assessment
 
+class ActiveManager(models.Manager):
+    def get_queryset(self):
+        return super(ActiveManager, self).get_queryset().filter(is_delete=False)
+
+
+class DeleteManager(models.Manager):
+    def get_queryset(self):
+        return super(DeleteManager, self).get_queryset().filter(is_delete=True)
+
 
 class Category(models.Model):
     category_info = models.TextField()
@@ -16,12 +25,20 @@ class Category(models.Model):
     num_of_questions = models.IntegerField(default=10)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+    is_delete = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    active_objects = ActiveManager()
+    deleted_objects = DeleteManager()
 
     def __str__(self):
         return self.name
 
     class Meta:
         ordering = ('-created_date',)
+
+    def questions(self):
+        return self.question_set.filter(is_delete=False)
 
 
 class Question(models.Model):
@@ -32,16 +49,21 @@ class Question(models.Model):
 
     TYPES = (
         ("Multi-choice", "Multi-choice"),
-        ("Open-ended", "Open-ended")
+        ("Open-ended", "Open-ended"),
+        ("Multi-response", "Multi-response")
     )
 
-    test_category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='questions')
+    test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
     question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
     question_category = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    question_hint = models.TextField(null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    active_objects = ActiveManager()
+    deleted_objects = DeleteManager()
 
     def __str__(self):
         return self.question_text
@@ -52,13 +74,21 @@ class Question(models.Model):
     def session_answer(self):
         return self.session_answer_set.all()
 
+    def choices(self):
+        return self.choice_set.filter(is_delete=False)
+
 
 class Choice(models.Model):
-    question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text = models.CharField(max_length=255)
-    is_correct = models.BooleanField(default=False)
+    is_correct = models.BooleanField()
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
+    is_delete = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    active_objects = ActiveManager()
+    deleted_objects = DeleteManager()
     
     def __str__(self):
         return self.choice_text
@@ -73,3 +103,8 @@ class OpenEndedAnswer(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+    is_delete = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    active_objects = ActiveManager()
+    deleted_objects = DeleteManager()

@@ -7,7 +7,6 @@ from questions_category.models import Category
 
 
 class CategorySerializer(ModelSerializer):
-
     class Meta:
         model = Category
         fields = ('id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date')
@@ -23,7 +22,8 @@ class AssessmentSerializer(ModelSerializer):
 
     class Meta:
         model = Assessment
-        fields = ("id", "name", "assessment_info", "total_duration", "application_type", "benchmark", "date_created", "date_updated", "categories")
+        fields = ("id", "name", "assessment_info", "total_duration", "application_type", "benchmark", "date_created",
+                  "date_updated", "categories")
 
     extra_kwargs = {
         'created_date': {'read_only': True},
@@ -32,6 +32,7 @@ class AssessmentSerializer(ModelSerializer):
 
     def validate(self, attrs):
         assessment_name = attrs.get('name')
+        application_type = attrs.get('application_type')
 
         if not attrs.get('assessment_info'):
             raise serializers.ValidationError('assessment_info must be provided.')
@@ -42,8 +43,8 @@ class AssessmentSerializer(ModelSerializer):
         if not attrs.get('benchmark'):
             raise serializers.ValidationError('benchmark must be provided.')
 
-        if Assessment.objects.filter(name__iexact=assessment_name).exists():
-            raise serializers.ValidationError('Assessment with the same name already exist.')
+        # if Assessment.objects.filter(name__iexact=assessment_name, application_type=application_type).exists():
+        #     raise serializers.ValidationError('Assessment with this name already have the Application type')
 
         return attrs
 
@@ -52,7 +53,7 @@ class ApplicationTypeSerializer(ModelSerializer):
     class Meta:
         model = ApplicationType
         fields = (
-            'title', 'description'
+            'id', 'title', 'description'
         )
 
 
@@ -64,3 +65,6 @@ class StartAssessmentSerializer(serializers.Serializer):
     enable_webcam = serializers.BooleanField()
     full_screen_active = serializers.BooleanField()
 
+
+class GetAssessmentForCandidateSerializer(serializers.Serializer):
+    course = serializers.CharField()
