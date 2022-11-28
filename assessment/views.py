@@ -13,11 +13,13 @@ from assessment.models import Assessment, ApplicationType, AssessmentSession
 from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer, \
     StartAssessmentSerializer, GetAssessmentForCandidateSerializer
 from rest_framework import generics, status
-from questions_category.models import Category
+from questions_category.models import Category, OpenEndedAnswer
+from result.models import Session_Answer
 from utils.json_renderer import CustomRenderer
 
 from questions_category.views import MultipleFieldLookupMixin
-from questions_category.serializers import QuestionSerializer, GenerateQuestionSerializer
+from questions_category.serializers import QuestionSerializer, GenerateQuestionSerializer, SessionAnswerSerializer, \
+    OpenEndedAnswerSerializer
 from questions_category.models import Question
 
 
@@ -101,6 +103,16 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                 if current_session.exists():
                     questions = current_session.first().question_list.all()
                     session = current_session.first()
+                    answers = Session_Answer.objects.filter(session=current_session.first().session_id,
+                                                            candidate=serializer.data.get('candidate_id'))
+                    open_ended_answer = OpenEndedAnswer.active_objects.filter(
+                        candidate=serializer.data.get('candidate_id'), category=category)
+                    q_answers = SessionAnswerSerializer(answers, many=True)
+                    q_open_ended_answer = OpenEndedAnswerSerializer(open_ended_answer, many=True)
+                    q = GenerateQuestionSerializer(questions, many=True)
+                    return Response({'session_id': session.session_id, 'questions': q.data, 'answers': q_answers.data,
+                                     'open_ended_answers': q_open_ended_answer.data},
+                                    status=status.HTTP_200_OK)
                 else:
                     session = AssessmentSession.objects.create(assessment=assessment,
                                                                category=category, **serializer.data)
@@ -114,12 +126,13 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                     for question in questions:
                         session.question_list.add(question)
 
-                q = GenerateQuestionSerializer(questions, many=True)
-                return Response({'session_id': session.session_id, 'questions': q.data},
-                                status=status.HTTP_200_OK)
+                    q = GenerateQuestionSerializer(questions, many=True)
+                    return Response({'session_id': session.session_id, 'questions': q.data},
+                                    status=status.HTTP_200_OK)
 
             except (
-            Assessment.DoesNotExist, Category.DoesNotExist, AssessmentSession.DoesNotExist, Question.DoesNotExist):
+                    Assessment.DoesNotExist, Category.DoesNotExist, AssessmentSession.DoesNotExist,
+                    Question.DoesNotExist):
                 raise ValidationError('Assessment or the category does not exist.')
 
         return Response({'error': serializer.errors})

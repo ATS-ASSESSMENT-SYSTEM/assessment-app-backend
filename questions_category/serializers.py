@@ -14,7 +14,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class SessionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session_Answer
-        fields = ('choice', 'time_remaining')
+        fields = ('question', 'choice', 'time_remaining', 'mr_answers_id')
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -108,18 +108,15 @@ class QuestionSerializer(serializers.ModelSerializer):
 class OpenEndedAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpenEndedAnswer
-        fields = ('answer_text',)
+        fields = ('question', 'answer_text',)
 
 
 class GenerateQuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
-    session_answer = SessionAnswerSerializer(many=True, required=False)
-    open_ended_answer_text = OpenEndedAnswerSerializer(many=True, required=False)
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices',
-                  'session_answer', 'open_ended_answer_text')
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices')
 
 
 class CategorySerializer(serializers.ModelSerializer):
