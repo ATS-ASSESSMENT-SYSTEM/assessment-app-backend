@@ -14,7 +14,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class SessionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session_Answer
-        fields = ('choice', 'time_remaining', 'answer_text')
+        fields = ('choice', 'time_remaining')
 
 
 class QuestionSerializer(serializers.ModelSerializer):
