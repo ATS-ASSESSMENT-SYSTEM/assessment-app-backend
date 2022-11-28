@@ -75,3 +75,6 @@ class AssessmentSession(models.Model):
 
     class Meta:
         ordering = ["-date_created"]
+
+    def __str__(self):
+        return f'Assessment session for {self.candidate_id} for {self.category}'
