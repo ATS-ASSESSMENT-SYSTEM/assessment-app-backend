@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from assessment.models import Assessment
 from result.models import Session_Answer
-from .models import Category, Question, Choice
+from .models import Category, Question, Choice, OpenEndedAnswer
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -105,14 +105,21 @@ class QuestionSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class OpenEndedAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpenEndedAnswer
+        fields = ('answer_text',)
+
+
 class GenerateQuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
     session_answer = SessionAnswerSerializer(many=True, required=False)
+    open_ended_answer_text = OpenEndedAnswerSerializer(many=True, required=False)
 
     class Meta:
         model = Question
         fields = ('id', 'question_text', 'question_type', 'question_category', 'choices',
-                  'session_answer')
+                  'session_answer', 'open_ended_answer_text')
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -120,7 +127,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date', 'questions')
+        fields = (
+        'id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date', 'questions')
 
         extra_kwargs = {
             'created_date': {'read_only': True},
