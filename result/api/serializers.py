@@ -264,7 +264,7 @@ class SessionProcessorSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         session = validated_data.get('session_id')
-   
+
         session_instance = AssessmentSession.objects.get(session_id=session)
 
         result, created = Result.objects.get_or_create(assessment=session_instance.assessment,
