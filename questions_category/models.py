@@ -77,6 +77,9 @@ class Question(models.Model):
     def choices(self):
         return self.choice_set.filter(is_delete=False)
 
+    def open_ended_answer_text(self):
+        return self.answer.all()
+
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)

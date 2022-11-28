@@ -2,7 +2,7 @@ from django.urls import path
 from assessment import views
 
 urlpatterns = [
-    path('', views.AssessmentList.as_view(), name='assessment-list-create-view'),
+    path('create-list-assessment', views.AssessmentList.as_view(), name='assessment-list-create-view'),
     path('get-assessment-for-candidate', views.GetAssessmentForCandidateAPIView.as_view(), name='get-assessment-for-candidate'),
     path('application-type/', views.ApplicationTypeList.as_view(), name='applicationtype-list-view'),
     path('application-type/<int:pk>', views.ApplicationTypeDetail.as_view(), name='applicationtype-retrieve-view'),
