@@ -2,12 +2,12 @@ import json
 from abc import ABC
 
 from rest_framework import serializers
-from django.db.models import Sum
-from django.db.models import Exists
+from django.db.models import Sum, Q
 
-from result.models import Result, Category_Result, Session_Answer, AssessmentImages, AssessmentMedia, AssessmentFeedback
+from result.models import Result, Category_Result, Session_Answer, AssessmentImages, \
+    AssessmentMedia, AssessmentFeedback
 from assessment.models import Assessment, AssessmentSession
-from questions_category.models import Category, OpenEndedAnswer, Question
+from questions_category.models import Category, OpenEndedAnswer, Question, Choice
 
 
 # class CandidateSerializer(serializers.Serializer):
@@ -87,11 +87,14 @@ from questions_category.models import Category, OpenEndedAnswer, Question
 class SessionAnswerSerializer(serializers.ModelSerializer):
     answer_text = serializers.CharField(required=False)
     question_type = serializers.CharField()
+    mr_answers = serializers.ListSerializer(
+        child=serializers.IntegerField(), required=False
+    )
 
     class Meta:
         model = Session_Answer
         fields = ('candidate', "assessment", "category", "question", "is_correct", "session",
-                  "time_remaining", "question_type", "choice", "answer_text")
+                  "time_remaining", "question_type", "choice", "answer_text", "mr_answers")
         extra_kwargs = {"answer_text": {"required": False, "allow_null": True}}
 
     def validate(self, attrs):
@@ -101,11 +104,16 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             question_type = attrs.get('question_type')
 
-            if question_type not in ["Open-ended", 'Multi-choice']:
+            if question_type not in ["Open-ended", 'Multi-choice', 'Multi-response']:
                 raise serializers.ValidationError("Invalid Question Type")
 
             if question_type == 'Multi-choice' and attrs.get('answer_text'):
                 attrs.pop('answer_text')
+
+            if question_type == 'Multi-response':
+                mr_answers = attrs.get('mr_answers')
+                if not mr_answers:
+                    raise serializers.ValidationError('Please select answers for the question')
 
             if question_type == 'Open-ended':
                 answer_text = attrs.get('answer_text')
@@ -114,7 +122,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             check_session = AssessmentSession.objects.get(session_id=session.session_id)
             check_question = Question.objects.filter(pk=attrs['question'].pk).first()
-
+            print(check_question.question_type, question_type)
             if check_question.question_type != question_type:
                 raise serializers.ValidationError('Question type does not match the question ')
 
@@ -132,11 +140,14 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
         print("validate=>", validated_data)
         try:
             session_remaining_time = validated_data.pop('time_remaining')
-            is_correct_value = validated_data.pop('is_correct')
+
             question_type = validated_data.pop('question_type')
 
             if question_type == 'Open-ended':
                 answer_text = validated_data.pop('answer_text')
+
+            if question_type == 'Multi-response':
+                mr_answers = validated_data.pop('mr_answers')
 
             session = validated_data.get("session")
             choice = validated_data.get("choice")
@@ -148,7 +159,32 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 if session_answer.first().question_type != question_type:
                     raise serializers.ValidationError("You can't interchange question type")
 
+            if question_type == "Multi-response":
+                check_mr_answers = Choice.objects.filter(id__in=mr_answers) \
+                    .exclude(is_correct=True)
+                if check_mr_answers.count() > 0:
+                    all_correct = False
+                else:
+                    all_correct = True
+
+                if session_answer.exists():
+                    session_answer_instance = session_answer.first()
+                    session_answer_instance.is_correct = all_correct
+                    session_answer_instance.time_remaining = session_remaining_time
+                    session_answer_instance.question_type = question_type
+                    session_answer_instance.save()
+
+                    return session_answer_instance
+                new_session_answer = Session_Answer(**validated_data, is_correct=all_correct,
+                                                    time_remaining=session_remaining_time,
+                                                    mr_answers_id=mr_answers
+                                                    )
+                new_session_answer.save()
+                return new_session_answer
+
             if question_type == "Multi-choice":
+
+                is_correct_value = validated_data.pop('is_correct')
                 if session_answer.exists():
                     session_answer_instance = session_answer.first()
                     session_answer_instance.is_correct = is_correct_value
@@ -228,22 +264,24 @@ class SessionProcessorSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         session = validated_data.get('session_id')
+   
         session_instance = AssessmentSession.objects.get(session_id=session)
 
         result, created = Result.objects.get_or_create(assessment=session_instance.assessment,
                                                        candidate=session_instance.candidate_id, )
-        correct_score = Session_Answer.objects.filter(session=session_instance, question_type='Multi-choice',
-                                                      is_correct=True)
 
+        correct_score = Session_Answer.objects.filter(Q(question_type='Multi-choice') |
+                                                      Q(question_type='Multi-response'),
+                                                      session_id=session, is_correct=True)
         has_open_ended_answer = OpenEndedAnswer.objects.filter(candidate=session_instance.candidate_id,
                                                                category=session_instance.category)
-        if has_open_ended_answer.count() > 0:
-            has_open_ended_answer = True
 
-        session_category = Category_Result(result=result, category=session_instance.category,
-                                           score=correct_score.count(),
-                                           has_open_ended=has_open_ended_answer
-                                           )
+        has_open_ended = bool(has_open_ended_answer.count())
+
+        session_category = Category_Result.objects.create(result_id=result.pk, category=session_instance.category,
+                                                          score=correct_score.count(),
+                                                          has_open_ended=has_open_ended
+                                                          )
         session_category.save()
         # correct_score.delete()
         # session_instance.delete()
@@ -329,20 +367,28 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
     no_of_questions = serializers.SerializerMethodField()
     percentage_mark = serializers.SerializerMethodField()
     open_ended_questions = serializers.SerializerMethodField()
+    feedback = serializers.SerializerMethodField()
 
     class Meta:
         model = Category_Result
-        fields = ('category', 'score', 'status', 'no_of_questions', 'percentage_mark', 'open_ended_questions')
+        fields = ('category', 'score', 'status', 'no_of_questions', 'percentage_mark',
+                  'open_ended_questions', 'feedback')
 
     def get_no_of_questions(self, objs):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
 
     def get_percentage_mark(self, objs):
+        print("division=>0", objs.score, self.get_no_of_questions(objs))
         return (objs.score / self.get_no_of_questions(objs)) * 100
 
     def get_open_ended_questions(self, objs):
         opa_answer = OpenEndedAnswer.objects.filter(candidate=objs.result.candidate, category=objs.category)
         return OpenEndedSerializer(opa_answer, many=True).data
+
+    def get_feedback(self, objs):
+        fb = AssessmentFeedback.objects.filter(applicant_info__applicantId=objs.result.candidate,
+                                               assessment=objs.result.assessment)
+        return AssessmentFeedbackSerializer(fb.first()).data
 
 
 class CandidateResultSerializer(serializers.ModelSerializer):
@@ -351,8 +397,11 @@ class CandidateResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result
         fields = (
-            'candidate', 'is_active', 'result_status', 'duration', 'result_total', 'applicant_info', 'category_info')
-        extra_kwargs = {'category_info': {'read_only': True}}
+            'candidate', 'is_active', 'result_status', 'duration', 'result_total', 'applicant_info',
+            'images', 'category_info')
+        extra_kwargs = {'category_info': {'read_only': True},
+
+                        }
 
 
 class ProcessOpenEndedAnswerSerializer(serializers.Serializer):
@@ -372,33 +421,25 @@ class ProcessOpenEndedAnswerSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         try:
-            print(validated_data)
             opa_answer = OpenEndedAnswer.objects.get(pk=validated_data.get('opa_pk'))
             print(opa_answer)
             if opa_answer.is_marked:
-                opa_answer.is_correct = validated_data.get('is_correct')
-                opa_answer.save()
-                if validated_data.get('is_correct'):
-                    q = Category_Result.objects.get(result_id=validated_data.get('result_id'),
-                                                    category=validated_data.get('category'))
+                q = Category_Result.objects.get(result_id=validated_data.get('result_id'),
+                                                category=validated_data.get('category'))
+                if validated_data.get('is_correct') and not opa_answer.is_correct:
                     q.score += 1
                     q.save()
                     return validated_data
-                if not validated_data.get('is_correct'):
-                    q = Category_Result.objects.get(result_id=validated_data.get('result_id'),
-                                                    category=validated_data.get('category')
-                                                    )
+                if not validated_data.get('is_correct') and opa_answer:
                     q.score -= 1
                     q.save()
                     return validated_data
-
             opa_answer.is_correct = validated_data.get('is_correct')
             opa_answer.is_marked = True
             opa_answer.save()
             if validated_data.get('is_correct'):
                 q = Category_Result.objects.get(result_id=validated_data.get('result_id'),
-                                                category=validated_data.get('category')
-                                                )
+                                                category=validated_data.get('category'))
                 q.score += 1
                 q.save()
 

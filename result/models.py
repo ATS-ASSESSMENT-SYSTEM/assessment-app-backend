@@ -4,7 +4,7 @@ from django.db.models import Sum
 
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, Question, Choice, OpenEndedAnswer
-
+# from api.serializers import AssessmentImageSerializer
 
 def call_json(type_: str):
     if type_ == 'dict':
@@ -68,12 +68,18 @@ class Result(models.Model):
         # return  sessions.first().date_created
         return {
             "time_started": sessions.first().date_created,
-            "time_ended": sessions.last().date_created
+            "time_ended"
+            : sessions.last().date_created
         }
 
     # @property
     # def percentage_total(self):
     #         mark_obtainable = Category.objects.filter()
+    @property
+    def images(self):
+        q = AssessmentImages.objects.filter(assessment=self.assessment, candidate=self.candidate)
+        # return AssessmentImageSerializer(q, many=True).data
+        return []
 
     class Meta:
         unique_together = ('assessment', 'candidate')
@@ -95,7 +101,8 @@ class Category_Result(models.Model):
 class Session_Answer(models.Model):
     TYPES = (
         ("Multi-choice", "Multi-choice"),
-        ("Open-ended", "Open-ended")
+        ("Open-ended", "Open-ended"),
+        ("Multi-response", "Multi-response")
     )
     candidate = models.CharField(max_length=150)
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
@@ -106,6 +113,7 @@ class Session_Answer(models.Model):
     time_remaining = models.CharField(max_length=50)
     question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
     choice = models.ForeignKey(Choice, on_delete=models.CASCADE, null=True, blank=True)
+    mr_answers_id = models.JSONField(default=call_json(type_='list'), null=True, blank=True)
 
     def __str__(self):
         return f'Answer for {self.question}'
