@@ -1,9 +1,13 @@
+import json
+
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.db.models import Sum
 
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, Question, Choice, OpenEndedAnswer
+
+
 # from api.serializers import AssessmentImageSerializer
 
 def call_json(type_: str):
@@ -35,17 +39,15 @@ class Result(models.Model):
     @property
     def result_status(self) -> str:
         category_check = Category_Result.objects.filter(result_id=self.id)
-        print(1, category_check)
         if category_check.exclude(has_open_ended=True).exists():
-            print('Entered exists')
             opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk'))
-            print(opa_check, opa_check.exclude(is_marked=False))
             if opa_check.exclude(is_marked=False):
                 return 'Inconclusive'
 
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark
-        print(assessment_benchmark, self.result_total)
+        print("info", assessment_benchmark, self.result_total)
+
         # if assessment_benchmark > self.result_total:
         #     return 'Failed'
         #
@@ -62,7 +64,7 @@ class Result(models.Model):
     @property
     def duration(self):
         print(self.candidate, self.id)
-        sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate)\
+        sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate) \
             .order_by('date_created')
         print(sessions.first())
         # return  sessions.first().date_created
@@ -72,14 +74,31 @@ class Result(models.Model):
             : sessions.last().date_created
         }
 
-    # @property
-    # def percentage_total(self):
-    #         mark_obtainable = Category.objects.filter()
+    @property
+    def percentage_total(self):
+        # mark_obtainable = Category_Result.objects.filter(result_id=self.assessment)
+        print('inside percentage')
+        total_questions = self.assessment.number_of_question
+        print("total_question", self.id, total_questions)
+        return ''
+
     @property
     def images(self):
         q = AssessmentImages.objects.filter(assessment=self.assessment, candidate=self.candidate)
         # return AssessmentImageSerializer(q, many=True).data
+        if q.exists():
+            return json.loads(q)
         return []
+
+    @property
+    def feedback(self):
+        try:
+            fb = AssessmentFeedback.objects.get(applicant_info__applicantId=self.candidate,
+                                                assessment=self.assessment)
+            print(fb)
+            return json.loads(fb)
+        except AssessmentFeedback.DoesNotExist:
+            return {}
 
     class Meta:
         unique_together = ('assessment', 'candidate')

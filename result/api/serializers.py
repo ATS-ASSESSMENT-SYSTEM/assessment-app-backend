@@ -6,7 +6,7 @@ from django.db.models import Sum, Q
 
 from result.models import Result, Category_Result, Session_Answer, AssessmentImages, \
     AssessmentMedia, AssessmentFeedback
-from assessment.models import Assessment, AssessmentSession
+from assessment.models import Assessment, AssessmentSession, ApplicationType
 from questions_category.models import Category, OpenEndedAnswer, Question, Choice
 
 
@@ -329,10 +329,19 @@ class AssessmentMediaSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ApplicationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationType
+        fields = ('title',)
+
+
 class AssessmentSerializer(serializers.ModelSerializer):
+    application_type = ApplicationTypeSerializer(read_only=True)
+
     class Meta:
         model = Assessment
-        fields = ('assessment_info', 'name', 'application_type', 'benchmark', 'total_duration')
+        fields = (
+            'assessment_info', 'name', 'application_type', 'date_created', 'benchmark', 'is_delete', 'total_duration')
 
 
 class AssessmentFeedbackSerializer(serializers.ModelSerializer):
@@ -371,17 +380,25 @@ class CategoryNameSerializer(serializers.ModelSerializer):
         fields = ('category_info', 'name', 'test_duration', 'num_of_questions', 'created_date')
 
 
+class AssessmentSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssessmentSession
+        fields = ('date_created', 'device', 'browser', 'location', 'enable_webcam', 'full_screen_active')
+
+
 class CandidateCategoryResultSerializer(serializers.ModelSerializer):
     no_of_questions = serializers.SerializerMethodField()
     percentage_mark = serializers.SerializerMethodField()
     open_ended_questions = serializers.SerializerMethodField()
+    session = serializers.SerializerMethodField()
 
     category = CategoryNameSerializer()
 
     class Meta:
         model = Category_Result
-        fields = ('category', 'score', 'status', 'no_of_questions', 'percentage_mark',
-                  'open_ended_questions', 'feedback')
+        fields = ('category', 'score', 'status', 'no_of_questions',
+                  'percentage_mark', 'session',
+                                                        'open_ended_questions')
 
     def get_no_of_questions(self, objs):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
@@ -394,24 +411,28 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
         opa_answer = OpenEndedAnswer.objects.filter(candidate=objs.result.candidate, category=objs.category)
         return OpenEndedSerializer(opa_answer, many=True).data
 
+    def get_session(self, objs):
+        q = AssessmentSession.objects.get(assessment=objs.result.assessment, category=objs.category,
+                                          candidate_id=objs.result.candidate)
+        return AssessmentSessionSerializer(q).data
+
 
 class CandidateResultSerializer(serializers.ModelSerializer):
     category_info = CandidateCategoryResultSerializer(many=True)
-    feedback = serializers.SerializerMethodField(read_only=True)
+    assessment = AssessmentSerializer()
 
     class Meta:
         model = Result
         fields = (
-            'candidate', 'is_active', 'result_status', 'feedback', 'duration', 'result_total', 'applicant_info',
+            'candidate', 'is_active', 'assessment', 'result_status', 'feedback', 'percentage_total', 'duration',
+            'result_total', 'applicant_info',
             'images', 'category_info')
-        extra_kwargs = {'category_info': {'read_only': True},
+        extra_kwargs = {'category_info': {'read_only': True}}
 
-                        }
-
-    def get_feedback(self, objs):
-        fb = AssessmentFeedback.objects.filter(applicant_info__applicantId=objs.candidate,
-                                               assessment=objs.assessment)
-        return AssessmentFeedbackSerializer(fb.first()).data
+    # def get_feedback(self, objs):
+    #     fb = AssessmentFeedback.objects.filter(applicant_info__applicantId=objs.candidate,
+    #                                            assessment=objs.assessment)
+    #     return AssessmentFeedbackSerializer(fb.first()).data
 
 
 class ResultListSerializer(serializers.ModelSerializer):
