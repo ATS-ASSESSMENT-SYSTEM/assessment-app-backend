@@ -1,5 +1,6 @@
 import json
 
+from django.core import serializers
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.db.models import Sum
@@ -92,7 +93,8 @@ class Result(models.Model):
             fb = AssessmentFeedback.objects.get(applicant_info__applicantId=self.candidate,
                                                 assessment=self.assessment)
             print(fb)
-            return json.loads(fb)
+
+            return fb.feedback
         except AssessmentFeedback.DoesNotExist:
             return {}
 
