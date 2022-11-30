@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from django.shortcuts import render
@@ -110,6 +111,8 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                     q_answers = SessionAnswerSerializer(answers, many=True)
                     q_open_ended_answer = OpenEndedAnswerSerializer(open_ended_answer, many=True)
                     q = GenerateQuestionSerializer(questions, many=True)
+                    print(str(session.session_id))
+                    # serialize_session = json.loads(str.encode(str(session.session_id)))
                     return Response({'session_id': session.session_id, 'questions': q.data, 'answers': q_answers.data,
                                      'open_ended_answers': q_open_ended_answer.data},
                                     status=status.HTTP_200_OK)
