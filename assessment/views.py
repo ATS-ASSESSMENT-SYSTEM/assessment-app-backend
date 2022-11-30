@@ -180,7 +180,7 @@ class GetAssessmentForCandidateAPIView(GenericAPIView):
                 application_type = ApplicationType.active_objects.get(title__iexact=serializer.data.get('course'))
                 assessment = Assessment.active_objects.filter(application_type=application_type).latest('date_created')
                 assessment_data = AssessmentSerializer(assessment)
-                return Response({'data': assessment_data.data},
+                return Response(assessment_data.data,
                                 status=status.HTTP_200_OK)
             except (ApplicationType.DoesNotExist, Assessment.DoesNotExist):
                 raise ValidationError('ApplicationType or Assessment does not exist.')

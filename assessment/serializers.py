@@ -9,7 +9,8 @@ from questions_category.models import Category
 class CategorySerializer(ModelSerializer):
     class Meta:
         model = Category
-        fields = ('id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date')
+        fields = ('id', 'name', 'category_info', 'num_of_questions', 'num_of_questions_in_category', 'test_duration',
+                  'created_date', 'updated_date')
         extra_kwargs = {
             'created_date': {'read_only': True},
             'updated_date': {'read_only': True},
@@ -22,8 +23,10 @@ class AssessmentSerializer(ModelSerializer):
 
     class Meta:
         model = Assessment
-        fields = ("id", "name", "assessment_info", "total_duration", "application_type", "benchmark", "date_created",
-                  "date_updated", "categories")
+        fields = (
+            "id", "name", "assessment_info", "total_duration", "number_of_questions_in_assessment", "application_type",
+            "benchmark", "date_created",
+            "date_updated", "categories")
 
     extra_kwargs = {
         'created_date': {'read_only': True},
