@@ -9,7 +9,7 @@ from .views import (
 app_name = "questions-category"
 
 urlpatterns = [
-    path('', CategoryListCreateAPIView.as_view(), name='category-list-create-view'),
+    path('create-list-category', CategoryListCreateAPIView.as_view(), name='category-list-create-view'),
     path('<int:pk>', CategoryRetrieveUpdateDeleteAPIView.as_view(), name='category-retrieve-update-view'),
     path('<int:pk>/questions', QuestionCreateAPIView.as_view(), name='question-create-view'),
     path('<int:test_category_id>/questions/<int:id>', QuestionRetrieveUpdateDeleteAPIView.as_view(), name='question-retrieve-update-view'),
