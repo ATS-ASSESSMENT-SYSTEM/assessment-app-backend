@@ -11,14 +11,13 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+
+from corsheaders.defaults import default_headers
 from decouple import config
 import os
 
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -29,9 +28,7 @@ SECRET_KEY = 'django-insecure-lkno=6=ntjrt5b6i1l#!c4@5@076=t*(_s(42p(2u2(ridz+((
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-
 ALLOWED_HOSTS = ['assessbk.afexats.com', 'localhost', '127.0.0.1', 'https://afex-ats-assessment.netlify.app/']
-
 
 # Application definition
 
@@ -84,14 +81,15 @@ TEMPLATES = [
     },
 ]
 
-
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 30
+    'PAGE_SIZE': 30,
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'app_core.permissions.IsAuthenticated',
+    # ]
 }
 
 WSGI_APPLICATION = 'app_core.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -107,7 +105,6 @@ DATABASES = {
 
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -127,7 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -139,13 +135,11 @@ USE_I18N = True
 
 USE_TZ = False
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'static'
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -157,21 +151,22 @@ STATUS_CODES = {
     "error": config('ERROR', cast=int),
 }
 
-
 MEDIA_URL = 'media/'
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'app_core/static')]
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
 CORS_ALLOWED_ORIGINS = ['http://assessbk.afexats.com',
                         'http://localhost:3000', 'http://localhost:8000',
                         'http://127.0.0.1:3000',
                         'http://127.0.0.1:8000',
-                        # 'https://afex-ats-assessment.netlify.app/'
+                        'https://afex-ats-assessment.netlify.app'
+
                         ]
 CORS_ALLOW_CREDENTIALS = True
 
-
-
-
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "api-key",
+    "hash-key",
+    "request-ts"
+]
