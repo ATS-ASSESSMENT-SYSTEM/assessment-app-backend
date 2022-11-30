@@ -46,6 +46,7 @@ class Result(models.Model):
 
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark
+        mark_obtained = self.result_total.score__sum
         print("info", assessment_benchmark, self.result_total)
 
         # if assessment_benchmark > self.result_total:
@@ -85,7 +86,6 @@ class Result(models.Model):
     @property
     def images(self):
         q = AssessmentImages.objects.filter(assessment=self.assessment, candidate=self.candidate)
-        # return AssessmentImageSerializer(q, many=True).data
         if q.exists():
             return json.loads(q)
         return []

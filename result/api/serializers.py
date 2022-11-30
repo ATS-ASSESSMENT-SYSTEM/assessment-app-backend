@@ -122,7 +122,12 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             check_session = AssessmentSession.objects.get(session_id=session.session_id)
             check_question = Question.objects.filter(pk=attrs['question'].pk).first()
+
+            if check_session.candidate_id != attrs.get('candidate'):
+                raise serializers.ValidationError('This session is already active for another candidate')
+
             print(check_question.question_type, question_type)
+
             if check_question.question_type != question_type:
                 raise serializers.ValidationError('Question type does not match the question ')
 
@@ -240,8 +245,11 @@ class SessionProcessorSerializer(serializers.Serializer):
 
                 session_answers = Session_Answer.objects.filter(
                     session=session_instance).values_list('question', flat=True)
+
                 q_session = session_instance.question_list.all().values_list('id', flat=True)
+
                 print(session_answers, q_session)
+
                 if set(session_answers) != set(q_session):
                     raise serializers.ValidationError(
                         'Some questions are yet to be answer, please check and try again')
@@ -398,7 +406,7 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
         model = Category_Result
         fields = ('category', 'score', 'status', 'no_of_questions',
                   'percentage_mark', 'session',
-                                                        'open_ended_questions')
+                  'open_ended_questions')
 
     def get_no_of_questions(self, objs):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
