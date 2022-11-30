@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+
+from corsheaders.defaults import default_headers
 from decouple import config
 import os
 
@@ -90,7 +92,10 @@ TEMPLATES = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 30
+    'PAGE_SIZE': 30,
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'app_core.permissions.IsAuthenticated',
+    # ]
 }
 
 WSGI_APPLICATION = 'app_core.wsgi.application'
@@ -175,5 +180,9 @@ CORS_ALLOWED_ORIGINS = ['http://assessbk.afexats.com',
 CORS_ALLOW_CREDENTIALS = True
 
 
-
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "api-key",
+    "hash-key",
+    "request-ts"
+]
 
