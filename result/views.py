@@ -43,7 +43,7 @@ class AssessmentImagesAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
-        print(request.data['session_id'])
+        # print(request.data['session_id'])
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             session = AssessmentSession.objects.get(session_id=request.data['session_id'])
