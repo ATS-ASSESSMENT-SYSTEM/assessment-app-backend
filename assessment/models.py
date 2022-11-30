@@ -57,6 +57,11 @@ class Assessment(models.Model):
     def __str__(self):
         return f'Assessment for {self.application_type}'
 
+    @property
+    def number_of_question(self):
+        print("inside no of q ", self.category.category_question())
+        return 1
+
     class Meta:
         ordering = ["-date_created"]
         unique_together = ('name', 'application_type')
