@@ -39,10 +39,12 @@ class AssesmentDetail(generics.RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         assessment_id = self.kwargs.get('pk')
         try:
-            assessment = Assessment.active_objects.get(id=assessment_id)
-            assessment.is_delete = True
+            assessment = Assessment.objects.get(id=assessment_id)
+            assessment.is_delete = not assessment.is_delete
             assessment.save()
-            return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            if assessment.is_delete:
+                return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            return Response({"data": "Retrieved Successfully"}, status=status.HTTP_200_OK)
         except Assessment.DoesNotExist:
             raise ValidationError('Assessment does not exist.')
 
@@ -111,9 +113,9 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                     q_answers = SessionAnswerSerializer(answers, many=True)
                     q_open_ended_answer = OpenEndedAnswerSerializer(open_ended_answer, many=True)
                     q = GenerateQuestionSerializer(questions, many=True)
-                    print(str(session.session_id))
-                    # serialize_session = json.loads(str.encode(str(session.session_id)))
-                    return Response({'session_id': session.session_id, 'questions': q.data, 'answers': q_answers.data,
+                    dump_session = json.dumps(str(session.session_id))
+                    serialize_session = json.loads(dump_session)
+                    return Response({'session_id': serialize_session, 'questions': q.data, 'answers': q_answers.data,
                                      'open_ended_answers': q_open_ended_answer.data},
                                     status=status.HTTP_200_OK)
                 else:
@@ -128,9 +130,10 @@ class GenerateRandomQuestions(generics.CreateAPIView):
 
                     for question in questions:
                         session.question_list.add(question)
-
+                    dump_session = json.dumps(str(session.session_id))
+                    serialize_session = json.loads(dump_session)
                     q = GenerateQuestionSerializer(questions, many=True)
-                    return Response({'session_id': session.session_id, 'questions': q.data},
+                    return Response({'session_id': serialize_session, 'questions': q.data},
                                     status=status.HTTP_200_OK)
 
             except (
@@ -154,18 +157,21 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = 'uid'
 
     def delete(self, request, *args, **kwargs):
-        application_type_id = self.kwargs.get('pk')
+        application_type_id = self.kwargs.get('uid')
         try:
-            application_type = ApplicationType.active_objects.get(id=application_type_id)
-            application_type.is_delete = True
+            application_type = ApplicationType.objects.get(uid=application_type_id)
+            application_type.is_delete = not application_type.is_delete
             application_type.save()
-            return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            if application_type.is_delete:
+                return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            return Response({"data": "Retrieved Successfully"}, status=status.HTTP_200_OK)
         except ApplicationType.DoesNotExist:
             raise ValidationError('ApplicationType does not exist.')
 
 
 class GetAssessmentForCandidateAPIView(GenericAPIView):
     serializer_class = GetAssessmentForCandidateSerializer
+    renderer_classes = (CustomRenderer,)
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
