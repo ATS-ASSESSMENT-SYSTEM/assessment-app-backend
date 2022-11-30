@@ -20,8 +20,9 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-    def category_querstion(self):
-        print(self.questions)
+    def category_question(self):
+        q = Question.objects.filter(test_category=self.id)
+        return q
 
     class Meta:
         ordering = ('-created_date',)
