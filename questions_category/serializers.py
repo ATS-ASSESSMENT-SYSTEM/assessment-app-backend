@@ -55,7 +55,7 @@ class QuestionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Open ended question have no choices')
 
         if Question.active_objects.filter(question_text__iexact=attrs.get('question_text'),
-                                   test_category__pk=category_pk).exists():
+                                          test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
         return attrs
@@ -85,7 +85,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         category_pk = self.context['request'].parser_context.get('kwargs').get('test_category_id')
 
         if Question.active_objects.filter(question_text__iexact=question_text,
-                                   test_category__pk=category_pk).exists():
+                                          test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
         if question_type == 'Open-ended':
@@ -125,7 +125,8 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = (
-        'id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date', 'questions')
+            'id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'num_of_questions_in_category',
+            'created_date', 'updated_date', 'questions')
 
         extra_kwargs = {
             'created_date': {'read_only': True},

@@ -44,6 +44,9 @@ class Category(models.Model):
     def questions(self):
         return self.question_set.filter(is_delete=False)
 
+    def num_of_questions_in_category(self):
+        return self.question_set.filter(is_delete=False).count()
+
 
 class Question(models.Model):
     QUESTION_CATEGORIES = (
@@ -82,7 +85,7 @@ class Question(models.Model):
         return self.choice_set.filter(is_delete=False)
 
     def open_ended_answer_text(self):
-        return self.answer.all()
+        return self.answer.filter(is_delete=False)
 
 
 class Choice(models.Model):
