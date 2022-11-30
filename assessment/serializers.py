@@ -53,7 +53,7 @@ class ApplicationTypeSerializer(ModelSerializer):
     class Meta:
         model = ApplicationType
         fields = (
-            'id', 'title', 'description', 'uid'
+            'id', 'title', 'description', 'uid', 'is_delete'
         )
 
 

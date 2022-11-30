@@ -12,11 +12,11 @@ from Cryptodome.Util.Padding import pad, unpad
 class CustomRenderer(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
 
-        # key = b"VE\xeb6:^\x9bf\xe1\x8b\x8a\xc5\xbe'\xc2\xea"
-        # iv = b'\xe6C\x03\xbe\xe4\x84_\xc5%g`\xd5\xfc\xcd\xd2+'
-        # cipher = AES.new(key, AES.MODE_CBC, iv)
-        # s = json.dumps(data)
-        # encrypted_data = base64.b64encode(iv + cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
+        key = b"VE\xeb6:^\x9bf\xe1\x8b\x8a\xc5\xbe'\xc2\xea"
+        iv = b'\xe6C\x03\xbe\xe4\x84_\xc5%g`\xd5\xfc\xcd\xd2+'
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        s = json.dumps(data)
+        encrypted_data = base64.b64encode(iv + cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
         status_code = renderer_context["response"].status_code
         response = {
             "status": STATUS['success'],
