@@ -261,7 +261,7 @@ class SessionProcessorSerializer(serializers.Serializer):
                     section_category = Category_Result.objects.filter(
                         result=result, category=session_instance.category,
                     )
-                    if section_category and section_category.exists():
+                    if section_category and section_category.exissts():
                         raise serializers.ValidationError('This session has already been saved')
 
                 return attrs
@@ -432,9 +432,9 @@ class CandidateResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result
         fields = (
-            'candidate', 'is_active', 'assessment', 'result_status', 'feedback', 'percentage_total', 'duration',
+            'candidate', 'is_active', 'assessment', 'result_status', 'percentage_total', 'duration',
             'result_total', 'applicant_info',
-            'images', 'category_info')
+            'category_info')
         extra_kwargs = {'category_info': {'read_only': True}}
 
     # def get_feedback(self, objs):

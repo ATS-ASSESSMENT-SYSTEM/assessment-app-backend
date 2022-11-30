@@ -54,8 +54,8 @@ class Assessment(models.Model):
 
     @property
     def number_of_question(self):
-        print("inside no of q ", self.category.all())
-        return
+        print("inside no of q ", self.category.category_question())
+        return 1
 
     class Meta:
         ordering = ["-date_created"]

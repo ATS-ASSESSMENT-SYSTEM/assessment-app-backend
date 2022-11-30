@@ -38,29 +38,30 @@ class Result(models.Model):
 
     @property
     def result_status(self) -> str:
-        category_check = Category_Result.objects.filter(result_id=self.id)
-        if category_check.exclude(has_open_ended=True).exists():
-            opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk'))
-            if opa_check.exclude(is_marked=False):
+        category_check = Category_Result.objects.filter(result_id=self.id, has_open_ended=True)
+        if category_check.exists():
+            print("check=>", category_check.values_list('pk'))
+            opa_check = OpenEndedAnswer.object.filter(category_pk__in=category_check.values_list('pk', flat=True),
+                                                     )
+            print("check_2 =>", opa_check)
+            if opa_check.exists():
                 return 'Inconclusive'
-
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark
-        mark_obtained = self.result_total.score__sum
         print("info", assessment_benchmark, self.result_total)
 
-        # if assessment_benchmark > self.result_total:
-        #     return 'Failed'
-        #
-        # if assessment_benchmark < self.result_total:
-        #     return 'Passed'
+        mark_obtained = self.result_total['score__sum']
 
-        return 'Still Processing'
+        if assessment_benchmark > mark_obtained:
+            return 'Failed'
+        if assessment_benchmark < mark_obtained:
+            return 'Passed'
 
     @property
     def result_total(self) -> int:
-        return Category_Result.objects.filter(result_id=self.id). \
+        q = Category_Result.objects.filter(result_id=self.id). \
             aggregate(Sum('score'))
+        return q
 
     @property
     def duration(self):
@@ -68,7 +69,6 @@ class Result(models.Model):
         sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate) \
             .order_by('date_created')
         print(sessions.first())
-        # return  sessions.first().date_created
         return {
             "time_started": sessions.first().date_created,
             "time_ended"
@@ -78,7 +78,7 @@ class Result(models.Model):
     @property
     def percentage_total(self):
         # mark_obtainable = Category_Result.objects.filter(result_id=self.assessment)
-        print('inside percentage')
+        print('inside percentage', self.assessment.number_of_question)
         total_questions = self.assessment.number_of_question
         print("total_question", self.id, total_questions)
         return ''
@@ -95,8 +95,9 @@ class Result(models.Model):
         try:
             fb = AssessmentFeedback.objects.get(applicant_info__applicantId=self.candidate,
                                                 assessment=self.assessment)
-            print(fb)
-            return json.loads(fb)
+            # data =son.dumps(fb))
+            # print(json.dumps(fb))
+            return {}
         except AssessmentFeedback.DoesNotExist:
             return {}
 
