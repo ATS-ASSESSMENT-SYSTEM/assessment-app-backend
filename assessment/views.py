@@ -148,6 +148,7 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
+    lookup_field = 'uid'
 
     def delete(self, request, *args, **kwargs):
         application_type_id = self.kwargs.get('pk')
