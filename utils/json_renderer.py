@@ -30,7 +30,7 @@ class CustomRenderer(JSONRenderer):
             response["data"] = None
             try:
                 response["message"] = "something went wrong, trying to perform this action"
-                response["error"] = encrypted_data
+                response["error"] = data
             except KeyError:
                 response['data'] = ''
 
