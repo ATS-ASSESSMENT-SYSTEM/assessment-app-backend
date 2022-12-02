@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 
-from result.models import Result, Category_Result, AssessmentImages, AssessmentFeedback
+from result.models import Result, CategoryResult, AssessmentImages, AssessmentFeedback
 from assessment.models import AssessmentSession
 
 from .api.serializers import CandidateResultSerializer, SessionAnswerSerializer, \
@@ -47,7 +47,8 @@ class AssessmentImagesAPIView(APIView):
         # print(request.data['session_id'])
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            session = AssessmentSession.objects.get(session_id=request.data['session_id'])
+            session = AssessmentSession.objects.get(
+                session_id=request.data['session_id'])
             session_images = AssessmentImages(assessment=session.assessment,
                                               category=session.category,
                                               candidate=session.candidate_id,
@@ -65,6 +66,7 @@ class ResultLIstAPIView(ListAPIView):
     serializer_class = ResultListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = ['status', 'assessment']
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
 class AssessmentMediaAPIView(CreateAPIView):
@@ -80,7 +82,7 @@ class AssessmentFeedbackAPIView(CreateAPIView):
 
 class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
-    # permission_classes = (IsAssessmentAdminAuthenticated,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
     serializer_class = CandidateResultSerializer
     renderer_classes = (CustomRenderer,)
 
@@ -88,6 +90,7 @@ class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
 class ProcessOpenEndedAPIView(APIView):
     renderer_classes = (CustomRenderer,)
     serializer_class = ProcessOpenEndedAnswerSerializer
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
