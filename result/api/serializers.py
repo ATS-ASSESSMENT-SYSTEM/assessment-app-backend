@@ -431,11 +431,12 @@ class CandidateResultSerializer(serializers.ModelSerializer):
     category_info = CandidateCategoryResultSerializer(many=True)
     assessment = AssessmentSerializer()
     result_total = serializers.IntegerField()
+    assessment_category_count = serializers.IntegerField()
 
     class Meta:
         model = Result
         fields = (
-            'id', 'candidate', 'is_active', 'assessment', 'result_status', 'percentage_total', 'duration',
+            'id', 'candidate', 'is_active', 'assessment_category_count', 'assessment', 'result_status', 'percentage_total', 'duration',
             'result_total', 'applicant_info',
             'category_info')
         extra_kwargs = {'category_info': {'read_only': True}}

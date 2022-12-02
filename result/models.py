@@ -39,6 +39,10 @@ class Result(models.Model):
         return self.category_result_set.all()
 
     @property
+    def assessment_category_count(self):
+        return self.assessment.category.all().count()
+
+    @property
     def result_status(self) -> str:
         # category_check = Category_Result.objects.filter(result_id=self.id, has_open_ended=True)
         # if category_check.exists():
