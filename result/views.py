@@ -65,6 +65,7 @@ class ResultLIstAPIView(ListAPIView):
     serializer_class = ResultListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = ['status', 'assessment']
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
 class AssessmentMediaAPIView(CreateAPIView):
@@ -80,7 +81,7 @@ class AssessmentFeedbackAPIView(CreateAPIView):
 
 class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
-    # permission_classes = (IsAssessmentAdminAuthenticated,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
     serializer_class = CandidateResultSerializer
     renderer_classes = (CustomRenderer,)
 
@@ -100,6 +101,7 @@ class ProcessOpenEndedAPIView(APIView):
 class ResultInitializerAPIView(APIView):
     renderer_classes = (CustomRenderer,)
     serializer_class = ResultInitializerSerializer
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)

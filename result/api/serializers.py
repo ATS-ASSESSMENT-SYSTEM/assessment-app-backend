@@ -1,6 +1,3 @@
-import json
-from abc import ABC
-
 from django.utils import timezone
 from rest_framework import serializers
 from django.db.models import Sum, Q
@@ -9,80 +6,6 @@ from result.models import Result, Category_Result, Session_Answer, AssessmentIma
     AssessmentMedia, AssessmentFeedback
 from assessment.models import Assessment, AssessmentSession, ApplicationType
 from questions_category.models import Category, OpenEndedAnswer, Question, Choice
-
-
-# class CandidateSerializer(serializers.Serializer):
-#     candidate_id = serializers.CharField(max_length=100)
-#     email = serializers.EmailField()
-
-
-# class ResultSerializer(serializers.ModelSerializer):
-#     assessment = serializers.CharField(required=True)
-#     category_score_list = CategoryScoreSerializer(
-#         many=True, required=True, write_only=True)
-#     candidate = CandidateSerializer(required=True)
-#
-#     class Meta:
-#         model = Result
-#         fields = ('assessment', 'candidate', 'category_score_list',)
-#
-#     def validate(self, attrs):
-#
-#         assessment = attrs.get('assessment')
-#         candidate = attrs.get('candidate')
-#         scores = json.loads(json.dumps(attrs.get('category_score_list')))
-#
-#         category = [category['name'] for category in scores]
-#
-#         check_assessment = Assessment.objects.filter(name=assessment)
-#
-#         if not check_assessment.exists():
-#             raise serializers.ValidationError('Invalid assessment type')
-#
-#         category_instance = Category.objects.filter(name__in=category)
-#
-#         if not category_instance.exists():
-#             raise serializers.ValidationError('Category is invalid')
-#
-#         # assessment_q = category_instance.filter(assessment__pk=check_assessment.first().pk)
-#         #
-#         # if not len(category) is assessment_q.count():
-#         #     raise serializers.ValidationError('one or more category does not exists in the assessment')
-#
-#         result_instance = Result.objects.filter(
-#             assessment=check_assessment.first(), candidate=candidate)
-#
-#         if result_instance.exists():
-#             check_category = Category_Result.objects.filter(category__name__in=category,
-#                                                             result=result_instance.first())
-#             if check_category.exists():
-#                 raise serializers.ValidationError(
-#                     'Result category already exists for this candidate')
-#
-#         return attrs
-#
-#     def create(self, validated_data):
-#         # ask:  why am I getting ordered dict
-#
-#         assessment = Assessment.objects.get(
-#             name=validated_data.get('assessment'))
-#         candidate = validated_data.get('candidate')
-#
-#         scores = json.loads(json.dumps(
-#             validated_data.pop('category_score_list')))
-#
-#         create_result, created = Result.objects.get_or_create(assessment=assessment,
-#                                                               candidate=candidate)
-#         if create_result:
-#             for dict_element in scores:
-#                 category_instance = Category.objects.get(
-#                     name=dict_element['name'])
-#                 if dict_element['multiple_choice_score']:
-#                     Category_Result.objects.create(
-#                         result=create_result, score=dict_element['multiple_choice_score'],
-#                         category=category_instance)
-#
-#         return create_result
 
 
 class SessionAnswerSerializer(serializers.ModelSerializer):
@@ -118,8 +41,8 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 'date_created')
 
             if check_session.exists():
-                if ((
-                            timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                if ((timezone.now() - check_session.first().date_created).total_seconds() / 3600) \
+                        > assessment.total_duration:
                     raise serializers.ValidationError("Your assessment session has expired.")
 
             if question_type == 'Multi-response':
@@ -304,16 +227,8 @@ class SessionProcessorSerializer(serializers.Serializer):
                                                           status='FINISHED'
                                                           )
         session_category.save()
-        # correct_score.delete()
-        # session_instance.delete()
 
         return validated_data
-
-
-# class SessionSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = AssessmentSession
-#         field = ('session_id',)
 
 
 class AssessmentImageSerializer(serializers.ModelSerializer):
@@ -454,11 +369,6 @@ class CandidateResultSerializer(serializers.ModelSerializer):
             'category_info')
         extra_kwargs = {'category_info': {'read_only': True}}
 
-    # def get_feedback(self, objs):
-    #     fb = AssessmentFeedback.objects.filter(applicant_info__applicantId=objs.candidate,
-    #                                            assessment=objs.assessment)
-    #     return AssessmentFeedbackSerializer(fb.first()).data
-
 
 class ResultListSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
@@ -485,7 +395,7 @@ class ResultListSerializer(serializers.ModelSerializer):
         return objs.applicant_info.get('email')
 
     def get_applicant_result(self, objs):
-        return round(objs.percentage_total,2)
+        return round(objs.percentage_total, 2)
 
     def get_status(self, objs):
         return objs.result_status
