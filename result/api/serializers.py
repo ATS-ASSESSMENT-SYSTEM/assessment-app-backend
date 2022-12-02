@@ -341,7 +341,7 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
 
     def get_percentage_mark(self, objs):
-        print("division=>0", objs.score, self.get_no_of_questions(objs))
+
         return (objs.score / self.get_no_of_questions(objs)) * 100
 
     def get_open_ended_questions(self, objs):
