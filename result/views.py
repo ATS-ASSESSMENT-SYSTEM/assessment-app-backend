@@ -14,7 +14,8 @@ from assessment.models import AssessmentSession
 
 from .api.serializers import CandidateResultSerializer, SessionAnswerSerializer, \
     SessionProcessorSerializer, AssessmentImageSerializer, ResultListSerializer, AssessmentMediaSerializer, \
-    AssessmentFeedbackSerializer, CandidateResultSerializer, ProcessOpenEndedAnswerSerializer
+    AssessmentFeedbackSerializer, CandidateResultSerializer,\
+    ProcessOpenEndedAnswerSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
 
@@ -42,7 +43,7 @@ class AssessmentImagesAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request):
-        print(request.data['session_id'])
+        # print(request.data['session_id'])
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             session = AssessmentSession.objects.get(session_id=request.data['session_id'])
@@ -58,6 +59,7 @@ class AssessmentImagesAPIView(APIView):
 
 
 class ResultLIstAPIView(ListAPIView):
+    queryset = Result.objects.all()
     renderer_classes = (CustomRenderer,)
     serializer_class = ResultListSerializer
     filter_backends = [DjangoFilterBackend]
@@ -79,6 +81,7 @@ class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
     serializer_class = CandidateResultSerializer
     renderer_classes = (CustomRenderer,)
+
 
 
 class ProcessOpenEndedAPIView(APIView):

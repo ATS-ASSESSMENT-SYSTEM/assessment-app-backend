@@ -6,7 +6,7 @@ from django.db.models import Sum, Q
 
 from result.models import Result, Category_Result, Session_Answer, AssessmentImages, \
     AssessmentMedia, AssessmentFeedback
-from assessment.models import Assessment, AssessmentSession
+from assessment.models import Assessment, AssessmentSession, ApplicationType
 from questions_category.models import Category, OpenEndedAnswer, Question, Choice
 
 
@@ -140,8 +140,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
         print("validate=>", validated_data)
         try:
             session_remaining_time = validated_data.pop('time_remaining')
-            if validated_data.get('is_correct'):
-                is_correct_value = validated_data.pop('is_correct')
+
             question_type = validated_data.pop('question_type')
 
             if question_type == 'Open-ended':
@@ -184,6 +183,8 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 return new_session_answer
 
             if question_type == "Multi-choice":
+
+                is_correct_value = validated_data.pop('is_correct')
                 if session_answer.exists():
                     session_answer_instance = session_answer.first()
                     session_answer_instance.is_correct = is_correct_value
@@ -263,23 +264,24 @@ class SessionProcessorSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         session = validated_data.get('session_id')
+
         session_instance = AssessmentSession.objects.get(session_id=session)
 
         result, created = Result.objects.get_or_create(assessment=session_instance.assessment,
                                                        candidate=session_instance.candidate_id, )
+
         correct_score = Session_Answer.objects.filter(Q(question_type='Multi-choice') |
                                                       Q(question_type='Multi-response'),
-                                                      session=session_instance, is_correct=True, )
-
+                                                      session_id=session, is_correct=True)
         has_open_ended_answer = OpenEndedAnswer.objects.filter(candidate=session_instance.candidate_id,
                                                                category=session_instance.category)
-        if has_open_ended_answer.count() > 0:
-            has_open_ended_answer = True
 
-        session_category = Category_Result(result=result, category=session_instance.category,
-                                           score=correct_score.count(),
-                                           has_open_ended=has_open_ended_answer
-                                           )
+        has_open_ended = bool(has_open_ended_answer.count())
+
+        session_category = Category_Result.objects.create(result_id=result.pk, category=session_instance.category,
+                                                          score=correct_score.count(),
+                                                          has_open_ended=has_open_ended
+                                                          )
         session_category.save()
         # correct_score.delete()
         # session_instance.delete()
@@ -315,12 +317,6 @@ class ApplicantSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=100)
 
 
-class ResultListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Result
-        field = ['candidate', 'status', 'created_date', 'is_active']
-
-
 class AssessmentMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssessmentMedia
@@ -333,7 +329,24 @@ class AssessmentMediaSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ApplicationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationType
+        fields = ('title',)
+
+
+class AssessmentSerializer(serializers.ModelSerializer):
+    application_type = ApplicationTypeSerializer(read_only=True)
+
+    class Meta:
+        model = Assessment
+        fields = (
+            'assessment_info', 'name', 'application_type', 'date_created', 'benchmark', 'is_delete', 'total_duration')
+
+
 class AssessmentFeedbackSerializer(serializers.ModelSerializer):
+    assessment = AssessmentSerializer()
+
     class Meta:
         model = AssessmentFeedback
         fields = ('assessment', 'applicant_info', 'feedback')
@@ -361,16 +374,31 @@ class OpenEndedSerializer(serializers.ModelSerializer):
         fields = ('id', "is_correct", "question", "answer_text", "is_marked", "category")
 
 
+class CategoryNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('category_info', 'name', 'test_duration', 'num_of_questions', 'created_date')
+
+
+class AssessmentSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssessmentSession
+        fields = ('date_created', 'device', 'browser', 'location', 'enable_webcam', 'full_screen_active')
+
+
 class CandidateCategoryResultSerializer(serializers.ModelSerializer):
     no_of_questions = serializers.SerializerMethodField()
     percentage_mark = serializers.SerializerMethodField()
     open_ended_questions = serializers.SerializerMethodField()
-    feedback = serializers.SerializerMethodField()
+    session = serializers.SerializerMethodField()
+
+    category = CategoryNameSerializer()
 
     class Meta:
         model = Category_Result
-        fields = ('category', 'score', 'status', 'no_of_questions', 'percentage_mark',
-                  'open_ended_questions', 'feedback')
+        fields = ('category', 'score', 'status', 'no_of_questions',
+                  'percentage_mark', 'session',
+                                                        'open_ended_questions')
 
     def get_no_of_questions(self, objs):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
@@ -383,25 +411,34 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
         opa_answer = OpenEndedAnswer.objects.filter(candidate=objs.result.candidate, category=objs.category)
         return OpenEndedSerializer(opa_answer, many=True).data
 
-    def get_feedback(self, objs):
-        fb = AssessmentFeedback.objects.filter(applicant_info__applicantId=objs.result.candidate,
-                                               assessment=objs.result.assessment)
-        return AssessmentFeedbackSerializer(fb.first()).data
+    def get_session(self, objs):
+        q = AssessmentSession.objects.get(assessment=objs.result.assessment, category=objs.category,
+                                          candidate_id=objs.result.candidate)
+        return AssessmentSessionSerializer(q).data
 
 
 class CandidateResultSerializer(serializers.ModelSerializer):
     category_info = CandidateCategoryResultSerializer(many=True)
-
+    assessment = AssessmentSerializer()
 
     class Meta:
         model = Result
         fields = (
-            'candidate', 'is_active', 'result_status', 'duration', 'result_total', 'applicant_info',
+            'candidate', 'is_active', 'assessment', 'result_status', 'feedback', 'percentage_total', 'duration',
+            'result_total', 'applicant_info',
             'images', 'category_info')
-        extra_kwargs = {'category_info': {'read_only': True},
+        extra_kwargs = {'category_info': {'read_only': True}}
 
-                        }
+    # def get_feedback(self, objs):
+    #     fb = AssessmentFeedback.objects.filter(applicant_info__applicantId=objs.candidate,
+    #                                            assessment=objs.assessment)
+    #     return AssessmentFeedbackSerializer(fb.first()).data
 
+
+class ResultListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Result
+        fields = ('candidate', 'result_status', 'result_total', 'applicant_info', 'is_active')
 
 
 class ProcessOpenEndedAnswerSerializer(serializers.Serializer):

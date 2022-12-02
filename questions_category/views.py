@@ -54,10 +54,12 @@ class CategoryRetrieveUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         category_id = self.kwargs.get('pk')
         try:
-            category = Category.active_objects.get(id=category_id)
-            category.is_delete = True
+            category = Category.objects.get(id=category_id)
+            category.is_delete = not category.is_delete
             category.save()
-            return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            if category.is_delete:
+                return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            return Response({"data": "Retrieved Successfully"}, status=status.HTTP_200_OK)
         except Category.DoesNotExist:
             raise ValidationError('Category does not exist.')
 
@@ -97,10 +99,12 @@ class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, RetrieveUpda
     def delete(self, request, *args, **kwargs):
         question_id = self.kwargs.get('id')
         try:
-            question = Question.active_objects.get(id=question_id)
-            question.is_delete = True
+            question = Question.objects.get(id=question_id)
+            question.is_delete = not question.is_delete
             question.save()
-            return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            if question.is_delete:
+                return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            return Response({"data": "Retrieved Successfully"}, status=status.HTTP_200_OK)
         except Question.DoesNotExist:
             raise ValidationError('Question does not exist.')
 
@@ -117,9 +121,11 @@ class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView
     def delete(self, request, *args, **kwargs):
         choice_id = self.kwargs.get('id')
         try:
-            choice = Choice.active_objects.get(id=choice_id)
-            choice.is_delete = True
+            choice = Choice.objects.get(id=choice_id)
+            choice.is_delete = not choice.is_delete
             choice.save()
-            return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            if choice.is_delete:
+                return Response({"data": "Deleted Successfully"}, status=status.HTTP_200_OK)
+            return Response({"data": "Retrieved Successfully"}, status=status.HTTP_200_OK)
         except Choice.DoesNotExist:
             raise ValidationError('Choice does not exist.')

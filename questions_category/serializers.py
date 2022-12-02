@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from assessment.models import Assessment
 from result.models import Session_Answer
-from .models import Category, Question, Choice
+from .models import Category, Question, Choice, OpenEndedAnswer
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -14,7 +14,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 class SessionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session_Answer
-        fields = ('choice', 'time_remaining')
+        fields = ('question', 'choice', 'time_remaining', 'mr_answers_id')
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -54,8 +54,8 @@ class QuestionSerializer(serializers.ModelSerializer):
             if choices:
                 raise serializers.ValidationError('Open ended question have no choices')
 
-        if Question.objects.filter(question_text__iexact=attrs.get('question_text'),
-                                   test_category__pk=category_pk).exists():
+        if Question.active_objects.filter(question_text__iexact=attrs.get('question_text'),
+                                          test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
         return attrs
@@ -84,8 +84,8 @@ class QuestionSerializer(serializers.ModelSerializer):
         question_text = validated_data.get('question_text')
         category_pk = self.context['request'].parser_context.get('kwargs').get('test_category_id')
 
-        if Question.objects.filter(question_text__iexact=question_text,
-                                   test_category__pk=category_pk).exists():
+        if Question.active_objects.filter(question_text__iexact=question_text,
+                                          test_category__pk=category_pk).exists():
             raise serializers.ValidationError('The question already exist in the category.')
 
         if question_type == 'Open-ended':
@@ -105,14 +105,18 @@ class QuestionSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+class OpenEndedAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpenEndedAnswer
+        fields = ('question', 'answer_text',)
+
+
 class GenerateQuestionSerializer(serializers.ModelSerializer):
     choices = ChoiceSerializer(many=True, required=False)
-    session_answer = SessionAnswerSerializer(many=True, required=False)
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices',
-                  'session_answer')
+        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices')
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -120,7 +124,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'created_date', 'updated_date', 'questions')
+        fields = (
+            'id', 'name', 'category_info', 'num_of_questions', 'test_duration', 'num_of_questions_in_category',
+            'created_date', 'updated_date', 'questions')
 
         extra_kwargs = {
             'created_date': {'read_only': True},
@@ -130,7 +136,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         category_name = attrs.get('name')
-        if Category.objects.filter(name__iexact=category_name).exists():
+        if Category.active_objects.filter(name__iexact=category_name).exists():
             raise serializers.ValidationError('Category with the same name already exist.')
 
         return attrs

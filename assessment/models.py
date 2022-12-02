@@ -2,6 +2,10 @@ import uuid
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.template.defaultfilters import slugify
+
 from questions_category.models import Category, Question
 from django.core.validators import MaxValueValidator, MinValueValidator
 
@@ -20,6 +24,7 @@ class DeleteManager(models.Manager):
 class ApplicationType(models.Model):
     title = models.CharField(max_length=250, unique=True)
     description = models.TextField(null=True, blank=True)
+    uid = models.CharField(max_length=250, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_delete = models.BooleanField(default=False)
 
@@ -51,6 +56,14 @@ class Assessment(models.Model):
 
     def __str__(self):
         return f'Assessment for {self.application_type}'
+
+    def number_of_questions_in_assessment(self):
+        categories = self.categories()
+        questions = []
+        for category in categories:
+            c = category.question_set.filter(is_delete=False).count()
+            questions.append(c)
+        return sum(questions)
 
     class Meta:
         ordering = ["-date_created"]

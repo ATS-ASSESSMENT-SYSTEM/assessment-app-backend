@@ -34,11 +34,18 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    def category_question(self):
+        q = Question.objects.filter(test_category=self.id)
+        return q
+
     class Meta:
         ordering = ('-created_date',)
 
     def questions(self):
         return self.question_set.filter(is_delete=False)
+
+    def num_of_questions_in_category(self):
+        return self.question_set.filter(is_delete=False).count()
 
 
 class Question(models.Model):
@@ -76,6 +83,9 @@ class Question(models.Model):
 
     def choices(self):
         return self.choice_set.filter(is_delete=False)
+
+    def open_ended_answer_text(self):
+        return self.answer.filter(is_delete=False)
 
 
 class Choice(models.Model):
