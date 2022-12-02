@@ -29,8 +29,10 @@ class CustomListCreateAPIView(ListCreateAPIView):
         return super(CustomListCreateAPIView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        data = decrypt(request.data['data'])
-        request._full_data = data
+        if request.data.get('data'):
+            data = decrypt(request.data['data'])
+            request._full_data = data
+            return super(CustomListCreateAPIView, self).post(request, *args, **kwargs)
         return super(CustomListCreateAPIView, self).post(request, *args, **kwargs)
 
 
@@ -40,13 +42,17 @@ class CustomRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
         return super(CustomRetrieveUpdateDestroyAPIView, self).get(request, *args, **kwargs)
 
     def put(self, request, *args, **kwargs):
-        data = decrypt(request.data['data'])
-        request._full_data = data
+        if request.data.get('data'):
+            data = decrypt(request.data['data'])
+            request._full_data = data
+            return super(CustomRetrieveUpdateDestroyAPIView, self).put(request, *args, **kwargs)
         return super(CustomRetrieveUpdateDestroyAPIView, self).put(request, *args, **kwargs)
 
     def patch(self, request, *args, **kwargs):
-        data = decrypt(request.data['data'])
-        request._full_data = data
+        if request.data.get('data'):
+            data = decrypt(request.data['data'])
+            request._full_data = data
+            return super(CustomRetrieveUpdateDestroyAPIView, self).patch(request, *args, **kwargs)
         return super(CustomRetrieveUpdateDestroyAPIView, self).patch(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
