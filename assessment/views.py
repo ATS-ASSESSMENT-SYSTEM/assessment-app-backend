@@ -31,7 +31,7 @@ class AssessmentList(generics.ListCreateAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
-    permission_classes = (IsAssessmentAdminAuthenticated,)
+    # permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
 class AssesmentDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -151,14 +151,14 @@ class ApplicationTypeList(generics.ListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    permission_classes = (IsApplicationBackendAuthenticated,)
+    # permission_classes = (IsApplicationBackendAuthenticated,)
 
 
 class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    permission_classes = (IsApplicationBackendAuthenticated,)
+    # permission_classes = (IsApplicationBackendAuthenticated,)
     lookup_field = 'uid'
 
     def delete(self, request, *args, **kwargs):
