@@ -12,15 +12,16 @@ from Cryptodome.Util.Padding import pad, unpad
 class CustomRenderer(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
 
-        key = b"VE\xeb6:^\x9bf\xe1\x8b\x8a\xc5\xbe'\xc2\xea"
-        iv = b'\xe6C\x03\xbe\xe4\x84_\xc5%g`\xd5\xfc\xcd\xd2+'
+        key = b'$\x96& \xb4"\xbc,\x88\xea\xd2\xf26\xb0f\xfe'
+        iv = b'%\n\xed\xa8\xdf?Tm\xd6v\xaeW9\xf4i\xb5'
         cipher = AES.new(key, AES.MODE_CBC, iv)
-        # s = json.dumps(data)
-        # encrypted_data = base64.b64encode(iv + cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
+        s = json.dumps(data)
+        encrypted_data = base64.b64encode(cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
+        # print(encrypted_data)
         status_code = renderer_context["response"].status_code
         response = {
             "status": STATUS['success'],
-            "data": data,
+            "data": encrypted_data,
             "message": "Successfully Retrieved"
         }
 
@@ -29,7 +30,7 @@ class CustomRenderer(JSONRenderer):
             response["data"] = None
             try:
                 response["message"] = "something went wrong, trying to perform this action"
-                response["error"] = data
+                response["error"] = encrypted_data
             except KeyError:
                 response['data'] = ''
 
