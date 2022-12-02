@@ -48,7 +48,6 @@ class Result(models.Model):
         if category_check.exists():
             opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk')
                                                       , is_marked=False)
-            print("ch=>", opa_check)
             if opa_check.exists():
                 return 'Inconclusive'
 
@@ -135,7 +134,7 @@ class Result(models.Model):
         # mark_obtainable = Category_Result.objects.filter(result_id=self.assessment)
         total_questions = self.assessment.number_of_questions_in_assessment
         total_mark_obtained = self.result_total
-        print("total=>", total_mark_obtained)
+
         return (total_mark_obtained / total_questions) * 100
 
     @property
