@@ -79,7 +79,7 @@ class AssessmentFeedbackAPIView(CreateAPIView):
 
 class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
-    permission_classes = (IsAssessmentAdminAuthenticated,)
+    # permission_classes = (IsAssessmentAdminAuthenticated,)
     serializer_class = CandidateResultSerializer
     renderer_classes = (CustomRenderer,)
 
