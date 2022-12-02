@@ -18,7 +18,7 @@ from rest_framework.test import APIRequestFactory
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
-from utils.middleware import AESCipherMiddleware
+from utils.utils import CustomListCreateAPIView, CustomRetrieveUpdateDestroyAPIView
 
 
 class MultipleFieldLookupMixin:
@@ -40,13 +40,13 @@ class StandardPagination(PageNumberPagination):
     max_page_size = 10
 
 
-class CategoryListCreateAPIView(ListCreateAPIView):
+class CategoryListCreateAPIView(CustomListCreateAPIView):
     serializer_class = CategorySerializer
     queryset = Category.active_objects.all()
     renderer_classes = (CustomRenderer,)
 
 
-class CategoryRetrieveUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView):
+class CategoryRetrieveUpdateDeleteAPIView(CustomRetrieveUpdateDestroyAPIView):
     serializer_class = CategorySerializer
     queryset = Category.active_objects.all()
     renderer_classes = (CustomRenderer,)
@@ -64,7 +64,7 @@ class CategoryRetrieveUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView):
             raise ValidationError('Category does not exist.')
 
 
-class QuestionCreateAPIView(CreateAPIView):
+class QuestionCreateAPIView(CustomListCreateAPIView):
     serializer_class = QuestionSerializer
     renderer_classes = (CustomRenderer,)
 
@@ -87,7 +87,7 @@ class QuestionListAPIView(ListAPIView):
         return Question.active_objects.filter(test_category__pk=category_pk)
 
 
-class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView):
+class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, CustomRetrieveUpdateDestroyAPIView):
     serializer_class = QuestionSerializer
     renderer_classes = (CustomRenderer,)
     lookup_fields = ('test_category_id', 'id')
@@ -109,7 +109,7 @@ class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, RetrieveUpda
             raise ValidationError('Question does not exist.')
 
 
-class UpdateChoiceAPIView(MultipleFieldLookupMixin, RetrieveUpdateDestroyAPIView):
+class UpdateChoiceAPIView(MultipleFieldLookupMixin, CustomRetrieveUpdateDestroyAPIView):
     serializer_class = ChoiceSerializer
     renderer_classes = (CustomRenderer,)
     lookup_fields = ('question_id', 'id')

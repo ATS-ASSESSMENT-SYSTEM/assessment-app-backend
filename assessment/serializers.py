@@ -24,7 +24,7 @@ class AssessmentSerializer(ModelSerializer):
     class Meta:
         model = Assessment
         fields = (
-            "id", "name", "assessment_info", "total_duration", "number_of_questions_in_assessment", "application_type",
+            "id", "name", "assessment_info", "total_duration", "number_of_questions_in_assessment", "num_of_categories", "application_type",
             "benchmark", "date_created",
             "date_updated", "categories")
 

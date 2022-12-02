@@ -27,14 +27,17 @@ from questions_category.models import Question
 
 
 # Create your views here.
-class AssessmentList(generics.ListCreateAPIView):
+from utils.utils import CustomRetrieveUpdateDestroyAPIView, CustomListCreateAPIView
+
+
+class AssessmentList(CustomListCreateAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
-class AssesmentDetail(generics.RetrieveUpdateDestroyAPIView):
+class AssesmentDetail(CustomRetrieveUpdateDestroyAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
@@ -61,7 +64,7 @@ class CategoryList(generics.ListAPIView):
         return Category.active_objects.filter(assessment__pk=assessment_pk)
 
 
-class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
+class AddCategoryToAssessmentAPIView(CustomRetrieveUpdateDestroyAPIView):
     queryset = Category.active_objects.all()
     renderer_classes = (CustomRenderer,)
 
@@ -82,7 +85,7 @@ class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
                 return Response({'status': 'Success', 'message': 'Category removed'})
 
 
-class GenerateRandomQuestions(generics.CreateAPIView):
+class GenerateRandomQuestions(CustomListCreateAPIView):
     serializer_class = StartAssessmentSerializer
     renderer_classes = (CustomRenderer,)
 
@@ -147,14 +150,14 @@ class GenerateRandomQuestions(generics.CreateAPIView):
         return Response({'error': serializer.errors})
 
 
-class ApplicationTypeList(generics.ListCreateAPIView):
+class ApplicationTypeList(CustomListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsApplicationBackendAuthenticated,)
 
 
-class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
+class ApplicationTypeDetail(CustomRetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
@@ -174,7 +177,7 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
             raise ValidationError('ApplicationType does not exist.')
 
 
-class GetAssessmentForCandidateAPIView(GenericAPIView):
+class GetAssessmentForCandidateAPIView(CustomListCreateAPIView):
     serializer_class = GetAssessmentForCandidateSerializer
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsAssessmentFrontendAuthenticated,)
