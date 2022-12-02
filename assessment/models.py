@@ -58,9 +58,13 @@ class Assessment(models.Model):
         return f'Assessment for {self.application_type}'
 
     @property
-    def number_of_question(self):
-        print("inside no of q ", self.category.category_question())
-        return 1
+    def number_of_questions_in_assessment(self):
+        categories = self.categories()
+        questions = []
+        for category in categories:
+            c = category.question_set.filter(is_delete=False).count()
+            questions.append(c)
+        return sum(questions)
 
     class Meta:
         ordering = ["-date_created"]
@@ -94,4 +98,3 @@ class AssessmentSession(models.Model):
 
     def __str__(self):
         return f'Assessment session for {self.candidate_id} for {self.category}'
-
