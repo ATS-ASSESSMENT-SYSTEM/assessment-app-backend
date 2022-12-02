@@ -1,6 +1,7 @@
 import json
 from abc import ABC
 
+from django.utils import timezone
 from rest_framework import serializers
 from django.db.models import Sum, Q
 
@@ -101,6 +102,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
         try:
             print("attribute=>", attrs)
             session = attrs.get('session')
+            assessment = attrs.get('assessment')
 
             question_type = attrs.get('question_type')
 
@@ -109,6 +111,16 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             if question_type == 'Multi-choice' and attrs.get('answer_text'):
                 attrs.pop('answer_text')
+
+            check_session = AssessmentSession.active_objects.filter(assessment=assessment,
+                                                                    candidate_id=attrs.get(
+                                                                        'candidate')).order_by(
+                'date_created')
+
+            if check_session.exists():
+                if ((
+                            timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                    raise serializers.ValidationError("Your assessment session has expired.")
 
             if question_type == 'Multi-response':
                 mr_answers = attrs.get('mr_answers')
@@ -122,7 +134,12 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             check_session = AssessmentSession.objects.get(session_id=session.session_id)
             check_question = Question.objects.filter(pk=attrs['question'].pk).first()
+
+            if check_session.candidate_id != attrs.get('candidate'):
+                raise serializers.ValidationError('This session is already active for another candidate')
+
             print(check_question.question_type, question_type)
+
             if check_question.question_type != question_type:
                 raise serializers.ValidationError('Question type does not match the question ')
 
@@ -240,8 +257,11 @@ class SessionProcessorSerializer(serializers.Serializer):
 
                 session_answers = Session_Answer.objects.filter(
                     session=session_instance).values_list('question', flat=True)
+
                 q_session = session_instance.question_list.all().values_list('id', flat=True)
+
                 print(session_answers, q_session)
+
                 if set(session_answers) != set(q_session):
                     raise serializers.ValidationError(
                         'Some questions are yet to be answer, please check and try again')
@@ -253,7 +273,7 @@ class SessionProcessorSerializer(serializers.Serializer):
                     section_category = Category_Result.objects.filter(
                         result=result, category=session_instance.category,
                     )
-                    if section_category and section_category.exists():
+                    if section_category and section_category.exissts():
                         raise serializers.ValidationError('This session has already been saved')
 
                 return attrs
@@ -280,7 +300,8 @@ class SessionProcessorSerializer(serializers.Serializer):
 
         session_category = Category_Result.objects.create(result_id=result.pk, category=session_instance.category,
                                                           score=correct_score.count(),
-                                                          has_open_ended=has_open_ended
+                                                          has_open_ended=has_open_ended,
+                                                          status='FINISHED'
                                                           )
         session_category.save()
         # correct_score.delete()
@@ -345,15 +366,17 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 
 class AssessmentFeedbackSerializer(serializers.ModelSerializer):
-    assessment = AssessmentSerializer()
+    # assessment = AssessmentSerializer()
 
     class Meta:
         model = AssessmentFeedback
-        fields = ('assessment', 'applicant_info', 'feedback')
+        fields = ('assessment', 'applicant_info', 'feedback', 'reaction')
 
     def validate(self, attrs):
         q = AssessmentFeedback.objects.filter(assessment=attrs['assessment'],
-                                              applicant_info=attrs['applicant_info'])
+                                              applicant_info=attrs['applicant_info'],
+                                              reaction=attrs['reaction']
+                                              )
         if q.exists():
             raise serializers.ValidationError('You already gave a feedback for the assessment')
 
@@ -391,14 +414,13 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
     percentage_mark = serializers.SerializerMethodField()
     open_ended_questions = serializers.SerializerMethodField()
     session = serializers.SerializerMethodField()
-
     category = CategoryNameSerializer()
 
     class Meta:
         model = Category_Result
         fields = ('category', 'score', 'status', 'no_of_questions',
                   'percentage_mark', 'session',
-                                                        'open_ended_questions')
+                  'open_ended_questions')
 
     def get_no_of_questions(self, objs):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
@@ -420,13 +442,16 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
 class CandidateResultSerializer(serializers.ModelSerializer):
     category_info = CandidateCategoryResultSerializer(many=True)
     assessment = AssessmentSerializer()
+    result_total = serializers.IntegerField()
+    assessment_category_count = serializers.IntegerField()
 
     class Meta:
         model = Result
         fields = (
-            'candidate', 'is_active', 'assessment', 'result_status', 'feedback', 'percentage_total', 'duration',
+            'id', 'candidate', 'is_active', 'assessment_category_count', 'assessment', 'result_status',
+            'percentage_total', 'duration',
             'result_total', 'applicant_info',
-            'images', 'category_info')
+            'category_info')
         extra_kwargs = {'category_info': {'read_only': True}}
 
     # def get_feedback(self, objs):
@@ -436,9 +461,34 @@ class CandidateResultSerializer(serializers.ModelSerializer):
 
 
 class ResultListSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    applicant_id = serializers.SerializerMethodField()
+    program = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    applicant_result = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = Result
-        fields = ('candidate', 'result_status', 'result_total', 'applicant_info', 'is_active')
+        fields = ('id', 'name', 'applicant_id', 'program', 'email', 'applicant_result', 'status')
+
+    def get_name(self, objs):
+        return objs.applicant_info.get('name')
+
+    def get_applicant_id(self, objs):
+        return objs.applicant_info.get('applicant_id')
+
+    def get_program(self, objs):
+        return objs.applicant_info.get('course')
+
+    def get_email(self, objs):
+        return objs.applicant_info.get('email')
+
+    def get_applicant_result(self, objs):
+        return round(objs.percentage_total,2)
+
+    def get_status(self, objs):
+        return objs.result_status
 
 
 class ProcessOpenEndedAnswerSerializer(serializers.Serializer):
@@ -484,3 +534,16 @@ class ProcessOpenEndedAnswerSerializer(serializers.Serializer):
 
         except OpenEndedAnswer.DoesNotExist:
             raise serializers.ValidationError('Invalid Data Provided')
+
+
+class ResultInitializerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Result
+        fields = ('assessment', 'applicant_info')
+
+    def create(self, validated_data):
+        Result.object.create(assessment=validated_data.get('assessment'),
+                             applicant_info=validated_data.get('applicant_info'),
+                             candidate=validated_data.get('applicant_info').applicantId
+                             )
+        return validated_data

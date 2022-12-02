@@ -14,10 +14,11 @@ from assessment.models import AssessmentSession
 
 from .api.serializers import CandidateResultSerializer, SessionAnswerSerializer, \
     SessionProcessorSerializer, AssessmentImageSerializer, ResultListSerializer, AssessmentMediaSerializer, \
-    AssessmentFeedbackSerializer, CandidateResultSerializer,\
-    ProcessOpenEndedAnswerSerializer
+    AssessmentFeedbackSerializer, CandidateResultSerializer, \
+    ProcessOpenEndedAnswerSerializer, ResultInitializerSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
+from app_core.permissions import IsAssessmentAdminAuthenticated
 
 
 class SessionAnswerAPIView(CreateAPIView):
@@ -79,14 +80,26 @@ class AssessmentFeedbackAPIView(CreateAPIView):
 
 class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
+    # permission_classes = (IsAssessmentAdminAuthenticated,)
     serializer_class = CandidateResultSerializer
     renderer_classes = (CustomRenderer,)
-
 
 
 class ProcessOpenEndedAPIView(APIView):
     renderer_classes = (CustomRenderer,)
     serializer_class = ProcessOpenEndedAnswerSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResultInitializerAPIView(APIView):
+    renderer_classes = (CustomRenderer,)
+    serializer_class = ResultInitializerSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
