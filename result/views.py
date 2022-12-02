@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 
-from result.models import Result, Category_Result, AssessmentImages, AssessmentFeedback
+from result.models import Result, CategoryResult, AssessmentImages, AssessmentFeedback
 from assessment.models import AssessmentSession
 
 from .api.serializers import CandidateResultSerializer, SessionAnswerSerializer, \
@@ -51,7 +51,8 @@ class AssessmentImagesAPIView(CustomListCreateAPIView):
         # print(request.data['session_id'])
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            session = AssessmentSession.objects.get(session_id=request.data['session_id'])
+            session = AssessmentSession.objects.get(
+                session_id=request.data['session_id'])
             session_images = AssessmentImages(assessment=session.assessment,
                                               category=session.category,
                                               candidate=session.candidate_id,
