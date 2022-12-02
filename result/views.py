@@ -9,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, JSONParser, FormParser
 
-from result.models import Result, Category_Result, AssessmentImages, AssessmentFeedback
+from result.models import Result, CategoryResult, AssessmentImages, AssessmentFeedback
 from assessment.models import AssessmentSession
 
 from .api.serializers import CandidateResultSerializer, SessionAnswerSerializer, \
@@ -18,17 +18,20 @@ from .api.serializers import CandidateResultSerializer, SessionAnswerSerializer,
     ProcessOpenEndedAnswerSerializer, ResultInitializerSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
-from app_core.permissions import IsAssessmentAdminAuthenticated
+from app_core.permissions import IsAssessmentAdminAuthenticated, IsAssessmentFrontendAuthenticated
+from utils.utils import CustomRetrieveUpdateDestroyAPIView, CustomListCreateAPIView
 
 
-class SessionAnswerAPIView(CreateAPIView):
+class SessionAnswerAPIView(CustomListCreateAPIView):
     serializer_class = SessionAnswerSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
 
-class SessionProcessorAPIView(APIView):
+class SessionProcessorAPIView(CustomListCreateAPIView):
     serializer_class = SessionProcessorSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -38,16 +41,18 @@ class SessionProcessorAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AssessmentImagesAPIView(APIView):
+class AssessmentImagesAPIView(CustomListCreateAPIView):
     serializer_class = AssessmentImageSerializer
     renderer_classes = (CustomRenderer,)
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request):
         # print(request.data['session_id'])
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            session = AssessmentSession.objects.get(session_id=request.data['session_id'])
+            session = AssessmentSession.objects.get(
+                session_id=request.data['session_id'])
             session_images = AssessmentImages(assessment=session.assessment,
                                               category=session.category,
                                               candidate=session.candidate_id,
@@ -59,35 +64,39 @@ class AssessmentImagesAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ResultLIstAPIView(ListAPIView):
+class ResultLIstAPIView(CustomListCreateAPIView):
     queryset = Result.objects.all()
     renderer_classes = (CustomRenderer,)
     serializer_class = ResultListSerializer
     filter_backends = [DjangoFilterBackend]
     filter_fields = ['status', 'assessment']
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
-class AssessmentMediaAPIView(CreateAPIView):
+class AssessmentMediaAPIView(CustomListCreateAPIView):
     serializer_class = AssessmentMediaSerializer
     renderer_classes = (CustomRenderer,)
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
 
-class AssessmentFeedbackAPIView(CreateAPIView):
+class AssessmentFeedbackAPIView(CustomListCreateAPIView):
     serializer_class = AssessmentFeedbackSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
 
-class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
+class CandidateResultAPIView(CustomRetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
-    # permission_classes = (IsAssessmentAdminAuthenticated,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
     serializer_class = CandidateResultSerializer
     renderer_classes = (CustomRenderer,)
 
 
-class ProcessOpenEndedAPIView(APIView):
+class ProcessOpenEndedAPIView(CustomListCreateAPIView):
     renderer_classes = (CustomRenderer,)
     serializer_class = ProcessOpenEndedAnswerSerializer
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -97,9 +106,10 @@ class ProcessOpenEndedAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ResultInitializerAPIView(APIView):
+class ResultInitializerAPIView(CustomListCreateAPIView):
     renderer_classes = (CustomRenderer,)
     serializer_class = ResultInitializerSerializer
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)

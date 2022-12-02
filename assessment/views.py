@@ -17,7 +17,7 @@ from assessment.serializers import AssessmentSerializer, CategorySerializer, App
     StartAssessmentSerializer, GetAssessmentForCandidateSerializer
 from rest_framework import generics, status
 from questions_category.models import Category, OpenEndedAnswer
-from result.models import Session_Answer
+from result.models import SessionAnswer
 from utils.json_renderer import CustomRenderer
 
 from questions_category.views import MultipleFieldLookupMixin
@@ -25,19 +25,22 @@ from questions_category.serializers import QuestionSerializer, GenerateQuestionS
     OpenEndedAnswerSerializer
 from questions_category.models import Question
 
-
 # Create your views here.
-class AssessmentList(generics.ListCreateAPIView):
+from utils.utils import CustomRetrieveUpdateDestroyAPIView, CustomListCreateAPIView
+
+
+class AssessmentList(CustomListCreateAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
     # permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
-class AssesmentDetail(generics.RetrieveUpdateDestroyAPIView):
+class AssesmentDetail(CustomRetrieveUpdateDestroyAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def delete(self, request, *args, **kwargs):
         assessment_id = self.kwargs.get('pk')
@@ -61,9 +64,10 @@ class CategoryList(generics.ListAPIView):
         return Category.active_objects.filter(assessment__pk=assessment_pk)
 
 
-class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
+class AddCategoryToAssessmentAPIView(CustomRetrieveUpdateDestroyAPIView):
     queryset = Category.active_objects.all()
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def patch(self, request, assessment_id, id):
         try:
@@ -82,9 +86,10 @@ class AddCategoryToAssessmentAPIView(generics.UpdateAPIView):
                 return Response({'status': 'Success', 'message': 'Category removed'})
 
 
-class GenerateRandomQuestions(generics.CreateAPIView):
+class GenerateRandomQuestions(CustomListCreateAPIView):
     serializer_class = StartAssessmentSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request, assessment_id, category_id):
         serializer = self.get_serializer(data=request.data)
@@ -102,19 +107,20 @@ class GenerateRandomQuestions(generics.CreateAPIView):
 
                 if check_session.exists():
                     if ((
-                                timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                            timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
                         return Response({'error': "Your assessment session has expired."},
                                         status=status.HTTP_403_FORBIDDEN)
 
                 if current_session.exists():
                     questions = current_session.first().question_list.all()
                     session = current_session.first()
-                    answers = Session_Answer.objects.filter(session=current_session.first().session_id,
-                                                            candidate=serializer.data.get('candidate_id'))
+                    answers = SessionAnswer.objects.filter(session=current_session.first().session_id,
+                                                           candidate=serializer.data.get('candidate_id'))
                     open_ended_answer = OpenEndedAnswer.active_objects.filter(
                         candidate=serializer.data.get('candidate_id'), category=category)
                     q_answers = SessionAnswerSerializer(answers, many=True)
-                    q_open_ended_answer = OpenEndedAnswerSerializer(open_ended_answer, many=True)
+                    q_open_ended_answer = OpenEndedAnswerSerializer(
+                        open_ended_answer, many=True)
                     q = GenerateQuestionSerializer(questions, many=True)
                     dump_session = json.dumps(str(session.session_id))
                     serialize_session = json.loads(dump_session)
@@ -129,7 +135,7 @@ class GenerateRandomQuestions(generics.CreateAPIView):
                                                                test_category=category,
                                                                question_category="Real").order_by(
                         '?')[
-                                :category.num_of_questions]
+                        :category.num_of_questions]
 
                     for question in questions:
                         session.question_list.add(question)
@@ -142,19 +148,20 @@ class GenerateRandomQuestions(generics.CreateAPIView):
             except (
                     Assessment.DoesNotExist, Category.DoesNotExist, AssessmentSession.DoesNotExist,
                     Question.DoesNotExist):
-                raise ValidationError('Assessment or the category does not exist.')
+                raise ValidationError(
+                    'Assessment or the category does not exist.')
 
         return Response({'error': serializer.errors})
 
 
-class ApplicationTypeList(generics.ListCreateAPIView):
+class ApplicationTypeList(CustomListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    # permission_classes = (IsApplicationBackendAuthenticated,)
+    permission_classes = (IsApplicationBackendAuthenticated, IsAssessmentFrontendAuthenticated)
 
 
-class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
+class ApplicationTypeDetail(CustomRetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
@@ -164,7 +171,8 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         application_type_id = self.kwargs.get('uid')
         try:
-            application_type = ApplicationType.objects.get(uid=application_type_id)
+            application_type = ApplicationType.objects.get(
+                uid=application_type_id)
             application_type.is_delete = not application_type.is_delete
             application_type.save()
             if application_type.is_delete:
@@ -174,7 +182,7 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
             raise ValidationError('ApplicationType does not exist.')
 
 
-class GetAssessmentForCandidateAPIView(GenericAPIView):
+class GetAssessmentForCandidateAPIView(CustomListCreateAPIView):
     serializer_class = GetAssessmentForCandidateSerializer
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsAssessmentFrontendAuthenticated,)
@@ -183,11 +191,14 @@ class GetAssessmentForCandidateAPIView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             try:
-                application_type = ApplicationType.active_objects.get(title__iexact=serializer.data.get('course'))
-                assessment = Assessment.active_objects.filter(application_type=application_type).latest('date_created')
+                application_type = ApplicationType.active_objects.get(
+                    title__iexact=serializer.data.get('course'))
+                assessment = Assessment.active_objects.filter(
+                    application_type=application_type).latest('date_created')
                 assessment_data = AssessmentSerializer(assessment)
                 return Response(assessment_data.data,
                                 status=status.HTTP_200_OK)
             except (ApplicationType.DoesNotExist, Assessment.DoesNotExist):
-                raise ValidationError('ApplicationType or Assessment does not exist.')
+                raise ValidationError(
+                    'ApplicationType or Assessment does not exist.')
         return Response({'error': serializer.errors})

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from assessment.models import Assessment
-from result.models import Session_Answer
+from result.models import SessionAnswer
 from .models import Category, Question, Choice, OpenEndedAnswer
 
 
@@ -13,7 +13,7 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 class SessionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Session_Answer
+        model = SessionAnswer
         fields = ('question', 'choice', 'time_remaining', 'mr_answers_id')
 
 
@@ -22,41 +22,49 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices')
+        fields = ('id', 'question_text', 'question_type',
+                  'question_category', 'choices')
 
     def validate(self, attrs):
         choices = attrs.get('choices')
-        category_pk = self.context['request'].parser_context.get('kwargs').get('pk')
+        category_pk = self.context['request'].parser_context.get(
+            'kwargs').get('pk')
         question_type = attrs.get('question_type')
         question_category = attrs.get('question_category')
 
         if not question_type:
-            raise serializers.ValidationError('question_type must be provided.')
+            raise serializers.ValidationError(
+                'question_type must be provided.')
 
         if not question_category:
-            raise serializers.ValidationError('question_category must be provided.')
+            raise serializers.ValidationError(
+                'question_category must be provided.')
 
         if question_type == 'Multi-choice':
             if not choices:
-                raise serializers.ValidationError('choices field must be provided.')
+                raise serializers.ValidationError(
+                    'choices field must be provided.')
 
             if len(choices) < 2:
                 raise serializers.ValidationError('Choices must be 2 at least')
 
         if question_type == 'Multi-response':
             if not choices:
-                raise serializers.ValidationError('choices field must be provided.')
+                raise serializers.ValidationError(
+                    'choices field must be provided.')
 
             if len(choices) < 3:
                 raise serializers.ValidationError('Choices must be 3 at least')
 
         if question_type == 'Open-ended':
             if choices:
-                raise serializers.ValidationError('Open ended question have no choices')
+                raise serializers.ValidationError(
+                    'Open ended question have no choices')
 
         if Question.active_objects.filter(question_text__iexact=attrs.get('question_text'),
                                           test_category__pk=category_pk).exists():
-            raise serializers.ValidationError('The question already exist in the category.')
+            raise serializers.ValidationError(
+                'The question already exist in the category.')
 
         return attrs
 
@@ -68,11 +76,13 @@ class QuestionSerializer(serializers.ModelSerializer):
             choices = validated_data.get('choices')
             if choices:
                 validated_data.pop('choices')
-                obj = Question.objects.create(test_category=category, **validated_data)
+                obj = Question.objects.create(
+                    test_category=category, **validated_data)
                 for choice in choices:
                     Choice.objects.create(question=obj, **choice)
                 return obj
-            obj = Question.objects.create(test_category=category, **validated_data)
+            obj = Question.objects.create(
+                test_category=category, **validated_data)
 
             return obj
         except Category.DoesNotExist:
@@ -82,23 +92,28 @@ class QuestionSerializer(serializers.ModelSerializer):
         choices = validated_data.get('choices')
         question_type = validated_data.get('question_type')
         question_text = validated_data.get('question_text')
-        category_pk = self.context['request'].parser_context.get('kwargs').get('test_category_id')
+        category_pk = self.context['request'].parser_context.get(
+            'kwargs').get('test_category_id')
 
         if Question.active_objects.filter(question_text__iexact=question_text,
                                           test_category__pk=category_pk).exists():
-            raise serializers.ValidationError('The question already exist in the category.')
+            raise serializers.ValidationError(
+                'The question already exist in the category.')
 
         if question_type == 'Open-ended':
             if instance.question_type == 'Multi-choice' or instance.question_type == 'Multi-response':
-                raise serializers.ValidationError("You can't swap the question type.")
+                raise serializers.ValidationError(
+                    "You can't swap the question type.")
 
         if question_type == 'Multi-choice':
             if instance.question_type == 'Open-ended' or instance.question_type == 'Multi-response':
-                raise serializers.ValidationError("You can't swap the question type.")
+                raise serializers.ValidationError(
+                    "You can't swap the question type.")
 
         if question_type == 'Multi-response':
             if instance.question_type == 'Open-ended' or instance.question_type == 'Multi-choice':
-                raise serializers.ValidationError("You can't swap the question type.")
+                raise serializers.ValidationError(
+                    "You can't swap the question type.")
 
         if choices:
             validated_data.pop('choices')
@@ -116,7 +131,8 @@ class GenerateQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ('id', 'question_text', 'question_type', 'question_category', 'choices')
+        fields = ('id', 'question_text', 'question_type',
+                  'question_category', 'choices')
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -137,6 +153,7 @@ class CategorySerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         category_name = attrs.get('name')
         if Category.active_objects.filter(name__iexact=category_name).exists():
-            raise serializers.ValidationError('Category with the same name already exist.')
+            raise serializers.ValidationError(
+                'Category with the same name already exist.')
 
         return attrs
