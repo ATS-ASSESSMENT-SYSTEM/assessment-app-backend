@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 
+from app_core.permissions import IsApplicationBackendAuthenticated, IsAssessmentFrontendAuthenticated, \
+    IsAssessmentAdminAuthenticated
 from assessment.models import Assessment, ApplicationType, AssessmentSession
 from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer, \
     StartAssessmentSerializer, GetAssessmentForCandidateSerializer
@@ -29,6 +31,7 @@ class AssessmentList(generics.ListCreateAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
 class AssesmentDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -148,12 +151,14 @@ class ApplicationTypeList(generics.ListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsApplicationBackendAuthenticated,)
 
 
 class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsApplicationBackendAuthenticated,)
     lookup_field = 'uid'
 
     def delete(self, request, *args, **kwargs):
@@ -172,6 +177,7 @@ class ApplicationTypeDetail(generics.RetrieveUpdateDestroyAPIView):
 class GetAssessmentForCandidateAPIView(GenericAPIView):
     serializer_class = GetAssessmentForCandidateSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
