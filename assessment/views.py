@@ -55,6 +55,7 @@ class AssesmentDetail(CustomRetrieveUpdateDestroyAPIView):
             raise ValidationError('Assessment does not exist.')
 
 
+
 class CategoryList(generics.ListAPIView):
     serializer_class = CategorySerializer
     renderer_classes = (CustomRenderer,)

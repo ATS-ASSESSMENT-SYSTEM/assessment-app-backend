@@ -17,7 +17,6 @@ def call_json(type_: str):
         return dict
     return list
 
-
 class Result(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     candidate = models.CharField(max_length=150)
