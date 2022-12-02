@@ -44,12 +44,13 @@ class Result(models.Model):
 
     @property
     def result_status(self) -> str:
-        # category_check = Category_Result.objects.filter(result_id=self.id, has_open_ended=True)
-        # if category_check.exists():
-        #     opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk'), is_marked=False)
-        #     print("ch=>", opa_check)
-        #     if opa_check.exists():
-        #         return 'Inconclusive'
+        category_check = Category_Result.objects.filter(result_id=self.id, has_open_ended=True)
+        if category_check.exists():
+            opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk')
+                                                      , is_marked=False)
+            print("ch=>", opa_check)
+            if opa_check.exists():
+                return 'Inconclusive'
 
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark

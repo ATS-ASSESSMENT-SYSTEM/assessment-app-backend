@@ -18,7 +18,7 @@ from .api.serializers import CandidateResultSerializer, SessionAnswerSerializer,
     ProcessOpenEndedAnswerSerializer, ResultInitializerSerializer
 from utils.json_renderer import CustomRenderer
 from .api.perms_and_mixins import MultipleFieldLookupMixin
-
+from app_core.permissions import IsAssessmentAdminAuthenticated
 
 class SessionAnswerAPIView(CreateAPIView):
     serializer_class = SessionAnswerSerializer
@@ -79,6 +79,7 @@ class AssessmentFeedbackAPIView(CreateAPIView):
 
 class CandidateResultAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Result.objects.all()
+    permission_classes = (IsAssessmentAdminAuthenticated,)
     serializer_class = CandidateResultSerializer
     renderer_classes = (CustomRenderer,)
 

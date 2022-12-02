@@ -1,6 +1,7 @@
 import json
 from abc import ABC
 
+from django.utils import timezone
 from rest_framework import serializers
 from django.db.models import Sum, Q
 
@@ -101,6 +102,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
         try:
             print("attribute=>", attrs)
             session = attrs.get('session')
+            assessment = attrs.get('assessment')
 
             question_type = attrs.get('question_type')
 
@@ -109,6 +111,16 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             if question_type == 'Multi-choice' and attrs.get('answer_text'):
                 attrs.pop('answer_text')
+
+            check_session = AssessmentSession.active_objects.filter(assessment=assessment,
+                                                                    candidate_id=attrs.get(
+                                                                        'candidate')).order_by(
+                'date_created')
+
+            if check_session.exists():
+                if ((
+                            timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                    raise serializers.ValidationError("Your assessment session has expired.")
 
             if question_type == 'Multi-response':
                 mr_answers = attrs.get('mr_answers')
@@ -436,7 +448,8 @@ class CandidateResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result
         fields = (
-            'id', 'candidate', 'is_active', 'assessment_category_count', 'assessment', 'result_status', 'percentage_total', 'duration',
+            'id', 'candidate', 'is_active', 'assessment_category_count', 'assessment', 'result_status',
+            'percentage_total', 'duration',
             'result_total', 'applicant_info',
             'category_info')
         extra_kwargs = {'category_info': {'read_only': True}}
@@ -448,9 +461,34 @@ class CandidateResultSerializer(serializers.ModelSerializer):
 
 
 class ResultListSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    applicant_id = serializers.SerializerMethodField()
+    program = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    applicant_result = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = Result
-        fields = ('candidate', 'result_status', 'result_total', 'applicant_info', 'is_active')
+        fields = ('id', 'name', 'applicant_id', 'program', 'email', 'applicant_result', 'status')
+
+    def get_name(self, objs):
+        return objs.applicant_info.get('name')
+
+    def get_applicant_id(self, objs):
+        return objs.applicant_info.get('applicant_id')
+
+    def get_program(self, objs):
+        return objs.applicant_info.get('course')
+
+    def get_email(self, objs):
+        return objs.applicant_info.get('email')
+
+    def get_applicant_result(self, objs):
+        return round(objs.percentage_total,2)
+
+    def get_status(self, objs):
+        return objs.result_status
 
 
 class ProcessOpenEndedAnswerSerializer(serializers.Serializer):
