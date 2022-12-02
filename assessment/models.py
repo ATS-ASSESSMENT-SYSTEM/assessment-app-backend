@@ -73,6 +73,9 @@ class Assessment(models.Model):
     def categories(self):
         return self.category.filter(is_delete=False)
 
+    def num_of_categories(self):
+        return self.category.filter(is_delete=False).count()
+
 
 class AssessmentSession(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
