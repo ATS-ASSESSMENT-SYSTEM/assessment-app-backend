@@ -4,6 +4,7 @@ from django.core import serializers
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.db.models import Sum
+from django.db.models import Sum, Q
 
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, Question, Choice, OpenEndedAnswer
@@ -39,19 +40,18 @@ class Result(models.Model):
 
     @property
     def result_status(self) -> str:
-        category_check = Category_Result.objects.filter(result_id=self.id, has_open_ended=True)
-        if category_check.exists():
-            print("check=>", category_check.values_list('pk'))
-            opa_check = OpenEndedAnswer.object.filter(category_pk__in=category_check.values_list('pk', flat=True),
-                                                     )
-            print("check_2 =>", opa_check)
-            if opa_check.exists():
-                return 'Inconclusive'
+        # category_check = Category_Result.objects.filter(result_id=self.id, has_open_ended=True)
+        # if category_check.exists():
+        #     opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk'), is_marked=False)
+        #     print("ch=>", opa_check)
+        #     if opa_check.exists():
+        #         return 'Inconclusive'
+
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark
         print("info", assessment_benchmark, self.result_total)
 
-        mark_obtained = self.result_total['score__sum']
+        mark_obtained = self.percentage_total
 
         if assessment_benchmark > mark_obtained:
             return 'Failed'
@@ -60,9 +60,58 @@ class Result(models.Model):
 
     @property
     def result_total(self) -> int:
-        q = Category_Result.objects.filter(result_id=self.id). \
-            aggregate(Sum('score'))
-        return q
+        # fetch all categories for the candidate
+        candidate_category = Category_Result.objects.filter(result_id=self.id)
+        # fetch all category ofr the assessment
+        assessment_category = self.assessment.category.all()
+
+        q = Category_Result.objects.filter(result_id=self.id).aggregate(Sum('score'))
+
+        if candidate_category.count() == assessment_category.count():
+            return q['score__sum']
+
+        unfinished_category = assessment_category.exclude(pk__in=candidate_category.values_list('category'))
+
+        unfinished_category_answer = Session_Answer.objects.filter(category__in=unfinished_category,
+                                                                   assessment=self.assessment,
+                                                                   candidate=self.candidate,
+                                                                   is_correct=True
+                                                                   )
+        available_category = unfinished_category.filter(pk__in=unfinished_category_answer.values_list('category'))
+        print("checks=>", unfinished_category_answer.values_list('category'),
+              unfinished_category.values_list('id'), available_category)
+
+        check_category = Category_Result.objects.filter(
+            result_id=self.id,
+            category__in=unfinished_category_answer.values_list('category')
+        )
+        print(check_category.exists())
+        if not check_category.exists():
+            # create un_finished_category
+            for category in available_category:
+                correct_score = Session_Answer.objects.filter(Q(question_type='Multi-choice') |
+                                                              Q(question_type='Multi-response'),
+                                                              is_correct=True,
+                                                              candidate=self.candidate,
+                                                              assessment=self.assessment,
+                                                              category=category
+                                                              )
+
+                has_open_ended_answer = OpenEndedAnswer.objects.filter(candidate=self.candidate,
+                                                                       category=category)
+
+                has_open_ended = bool(has_open_ended_answer.count())
+
+                get_or_create = Category_Result(
+                    result_id=self.id,
+                    category=category,
+                    score=correct_score.count(),
+                    has_open_ended=has_open_ended,
+                    status='STARTED'
+                )
+                get_or_create.save()
+
+        return q['score__sum'] + unfinished_category_answer.count()
 
     @property
     def duration(self):
@@ -79,10 +128,10 @@ class Result(models.Model):
     @property
     def percentage_total(self):
         # mark_obtainable = Category_Result.objects.filter(result_id=self.assessment)
-        print('inside percentage', self.assessment.number_of_question)
-        total_questions = self.assessment.number_of_question
-        print("total_question", self.id, total_questions)
-        return ''
+        total_questions = self.assessment.number_of_questions_in_assessment
+        total_mark_obtained = self.result_total
+        print("total=>", total_mark_obtained)
+        return (total_mark_obtained / total_questions) * 100
 
     @property
     def images(self):
@@ -106,13 +155,17 @@ class Result(models.Model):
 
 
 class Category_Result(models.Model):
+    STATUS = (
+        ('STARTED', 'STARTED'),
+        ('FINISHED', 'FINISHED')
+    )
     result = models.ForeignKey(Result, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     score = models.IntegerField()
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     has_open_ended = models.BooleanField(default=False)
-    status = models.CharField(max_length=100, default="TAKEN")
+    status = models.CharField(max_length=100, default="STARTED")
 
     def __str__(self) -> str:
         return f'{self.result} result for {self.category}'
@@ -164,7 +217,15 @@ class AssessmentMedia(models.Model):
 
 
 class AssessmentFeedback(models.Model):
+    REACTION = (
+        ('Not Satisfied', "Not Satisfied"),
+        ('Bad', 'Bad'),
+        ('Ok', 'Ok'),
+        ('Just Ok', 'Just Ok'),
+        ('Very Satisfied', 'Very Satisfied')
+    )
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     applicant_info = models.JSONField(default=call_json(type_='dict'), null=True, blank=True)
     feedback = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    reaction = models.CharField(null=True, blank=True, max_length=50, choices=REACTION, default='Ok')

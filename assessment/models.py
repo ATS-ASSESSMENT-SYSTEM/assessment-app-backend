@@ -57,6 +57,7 @@ class Assessment(models.Model):
     def __str__(self):
         return f'Assessment for {self.application_type}'
 
+    @property
     def number_of_questions_in_assessment(self):
         categories = self.categories()
         questions = []

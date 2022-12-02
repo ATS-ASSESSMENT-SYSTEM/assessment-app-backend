@@ -288,7 +288,8 @@ class SessionProcessorSerializer(serializers.Serializer):
 
         session_category = Category_Result.objects.create(result_id=result.pk, category=session_instance.category,
                                                           score=correct_score.count(),
-                                                          has_open_ended=has_open_ended
+                                                          has_open_ended=has_open_ended,
+                                                          status='FINISHED'
                                                           )
         session_category.save()
         # correct_score.delete()
@@ -353,15 +354,17 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 
 class AssessmentFeedbackSerializer(serializers.ModelSerializer):
-    assessment = AssessmentSerializer()
+    # assessment = AssessmentSerializer()
 
     class Meta:
         model = AssessmentFeedback
-        fields = ('assessment', 'applicant_info', 'feedback')
+        fields = ('assessment', 'applicant_info', 'feedback', 'reaction')
 
     def validate(self, attrs):
         q = AssessmentFeedback.objects.filter(assessment=attrs['assessment'],
-                                              applicant_info=attrs['applicant_info'])
+                                              applicant_info=attrs['applicant_info'],
+                                              reaction=attrs['reaction']
+                                              )
         if q.exists():
             raise serializers.ValidationError('You already gave a feedback for the assessment')
 
@@ -399,7 +402,6 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
     percentage_mark = serializers.SerializerMethodField()
     open_ended_questions = serializers.SerializerMethodField()
     session = serializers.SerializerMethodField()
-
     category = CategoryNameSerializer()
 
     class Meta:
@@ -428,11 +430,12 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
 class CandidateResultSerializer(serializers.ModelSerializer):
     category_info = CandidateCategoryResultSerializer(many=True)
     assessment = AssessmentSerializer()
+    result_total = serializers.IntegerField()
 
     class Meta:
         model = Result
         fields = (
-            'candidate', 'is_active', 'assessment', 'result_status', 'percentage_total', 'duration',
+            'id', 'candidate', 'is_active', 'assessment', 'result_status', 'percentage_total', 'duration',
             'result_total', 'applicant_info',
             'category_info')
         extra_kwargs = {'category_info': {'read_only': True}}
@@ -492,3 +495,16 @@ class ProcessOpenEndedAnswerSerializer(serializers.Serializer):
 
         except OpenEndedAnswer.DoesNotExist:
             raise serializers.ValidationError('Invalid Data Provided')
+
+
+class ResultInitializerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Result
+        fields = ('assessment', 'applicant_info')
+
+    def create(self, validated_data):
+        Result.object.create(assessment=validated_data.get('assessment'),
+                             applicant_info=validated_data.get('applicant_info'),
+                             candidate=validated_data.get('applicant_info').applicantId
+                             )
+        return validated_data
