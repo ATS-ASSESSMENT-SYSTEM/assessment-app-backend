@@ -86,6 +86,8 @@ class QuestionTests(APITestCase, URLPatternsTestCase):
                                           "question_category": "Real"})
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        # TODO :
+
     def test_question_update(self):
         """
         Ensure we can create a new account object.

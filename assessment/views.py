@@ -5,13 +5,13 @@ from django.shortcuts import render
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
 
 from app_core.permissions import IsApplicationBackendAuthenticated, IsAssessmentFrontendAuthenticated, \
-    IsAssessmentAdminAuthenticated
+    IsAssessmentAdminAuthenticated, IsApplicationBackendOrIsAssessmentAdminAuthenticated
 from assessment.models import Assessment, ApplicationType, AssessmentSession
 from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer, \
     StartAssessmentSerializer, GetAssessmentForCandidateSerializer
@@ -26,14 +26,14 @@ from questions_category.serializers import QuestionSerializer, GenerateQuestionS
 from questions_category.models import Question
 
 # Create your views here.
-from utils.utils import CustomRetrieveUpdateDestroyAPIView, CustomListCreateAPIView
+from utils.utils import CustomRetrieveUpdateDestroyAPIView, CustomListCreateAPIView, decrypt
 
 
 class AssessmentList(CustomListCreateAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
-    # permission_classes = (IsAssessmentAdminAuthenticated,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
 class AssesmentDetail(CustomRetrieveUpdateDestroyAPIView):
@@ -53,16 +53,6 @@ class AssesmentDetail(CustomRetrieveUpdateDestroyAPIView):
             return Response({"data": "Retrieved Successfully"}, status=status.HTTP_200_OK)
         except Assessment.DoesNotExist:
             raise ValidationError('Assessment does not exist.')
-
-
-
-class CategoryList(generics.ListAPIView):
-    serializer_class = CategorySerializer
-    renderer_classes = (CustomRenderer,)
-
-    def get_queryset(self):
-        assessment_pk = self.kwargs.get('pk')
-        return Category.active_objects.filter(assessment__pk=assessment_pk)
 
 
 class AddCategoryToAssessmentAPIView(CustomRetrieveUpdateDestroyAPIView):
@@ -93,87 +83,94 @@ class GenerateRandomQuestions(CustomListCreateAPIView):
     permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request, assessment_id, category_id):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                assessment = Assessment.active_objects.get(id=assessment_id)
-                category = Category.active_objects.get(id=category_id)
-                current_session = AssessmentSession.active_objects.filter(assessment=assessment, category=category,
-                                                                          candidate_id=serializer.data.get(
-                                                                              'candidate_id'))
-                check_session = AssessmentSession.active_objects.filter(assessment=assessment,
-                                                                        candidate_id=serializer.data.get(
-                                                                            'candidate_id')).order_by(
-                    'date_created')
+        if request.data.get('data'):
+            data = decrypt(request.data['data'])
+            request._full_data = data
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                try:
+                    assessment = Assessment.active_objects.get(id=assessment_id)
+                    category = Category.active_objects.get(id=category_id)
+                    current_session = AssessmentSession.active_objects.filter(assessment=assessment, category=category,
+                                                                              candidate_id=serializer.data.get(
+                                                                                  'candidate_id'))
+                    check_session = AssessmentSession.active_objects.filter(assessment=assessment,
+                                                                            candidate_id=serializer.data.get(
+                                                                                'candidate_id')).order_by(
+                        'date_created')
+                    if check_session.exists():
+                        if ((
+                                    timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                            return Response({'error': "Your assessment session has expired."},
+                                            status=status.HTTP_403_FORBIDDEN)
 
-                if check_session.exists():
-                    if ((
-                            timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
-                        return Response({'error': "Your assessment session has expired."},
-                                        status=status.HTTP_403_FORBIDDEN)
+                    if current_session.exists():
+                        questions = current_session.first().question_list.all()
+                        session = current_session.first()
+                        answers = Session_Answer.objects.filter(session=current_session.first().session_id,
+                                                                candidate=serializer.data.get('candidate_id'))
+                        open_ended_answer = OpenEndedAnswer.active_objects.filter(
+                            candidate=serializer.data.get('candidate_id'), category=category)
+                        q_answers = SessionAnswerSerializer(answers, many=True)
+                        q_open_ended_answer = OpenEndedAnswerSerializer(open_ended_answer, many=True)
+                        q = GenerateQuestionSerializer(questions, many=True)
+                        dump_session = json.dumps(str(session.session_id))
+                        serialize_session = json.loads(dump_session)
+                        return Response(
+                            {'session_id': serialize_session, 'questions': q.data, 'answers': q_answers.data,
+                             'open_ended_answers': q_open_ended_answer.data},
+                            status=status.HTTP_200_OK)
+                    else:
+                        session = AssessmentSession.objects.create(assessment=assessment,
+                                                                   category=category, **serializer.data)
 
-                if current_session.exists():
-                    questions = current_session.first().question_list.all()
-                    session = current_session.first()
-                    answers = SessionAnswer.objects.filter(session=current_session.first().session_id,
-                                                           candidate=serializer.data.get('candidate_id'))
-                    open_ended_answer = OpenEndedAnswer.active_objects.filter(
-                        candidate=serializer.data.get('candidate_id'), category=category)
-                    q_answers = SessionAnswerSerializer(answers, many=True)
-                    q_open_ended_answer = OpenEndedAnswerSerializer(
-                        open_ended_answer, many=True)
-                    q = GenerateQuestionSerializer(questions, many=True)
-                    dump_session = json.dumps(str(session.session_id))
-                    serialize_session = json.loads(dump_session)
-                    return Response({'session_id': serialize_session, 'questions': q.data, 'answers': q_answers.data,
-                                     'open_ended_answers': q_open_ended_answer.data},
-                                    status=status.HTTP_200_OK)
-                else:
-                    session = AssessmentSession.objects.create(assessment=assessment,
-                                                               category=category, **serializer.data)
+                        questions = Question.active_objects.filter(test_category__assessment=assessment,
+                                                                   test_category=category,
+                                                                   question_category="Real").order_by(
+                            '?')[
+                                    :category.num_of_questions]
 
-                    questions = Question.active_objects.filter(test_category__assessment=assessment,
-                                                               test_category=category,
-                                                               question_category="Real").order_by(
-                        '?')[
-                        :category.num_of_questions]
+                        for question in questions:
+                            session.question_list.add(question)
+                        dump_session = json.dumps(str(session.session_id))
+                        serialize_session = json.loads(dump_session)
+                        q = GenerateQuestionSerializer(questions, many=True)
+                        return Response({'session_id': serialize_session, 'questions': q.data},
+                                        status=status.HTTP_200_OK)
 
-                    for question in questions:
-                        session.question_list.add(question)
-                    dump_session = json.dumps(str(session.session_id))
-                    serialize_session = json.loads(dump_session)
-                    q = GenerateQuestionSerializer(questions, many=True)
-                    return Response({'session_id': serialize_session, 'questions': q.data},
-                                    status=status.HTTP_200_OK)
+                except (
+                        Assessment.DoesNotExist, Category.DoesNotExist, AssessmentSession.DoesNotExist,
+                        Question.DoesNotExist):
+                    raise ValidationError('Assessment or the category does not exist.')
 
-            except (
-                    Assessment.DoesNotExist, Category.DoesNotExist, AssessmentSession.DoesNotExist,
-                    Question.DoesNotExist):
-                raise ValidationError(
-                    'Assessment or the category does not exist.')
-
-        return Response({'error': serializer.errors})
+            return Response({'error': serializer.errors})
+        return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
 
-class ApplicationTypeList(CustomListCreateAPIView):
+class ApplicationTypeCreate(CustomListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    permission_classes = (IsApplicationBackendAuthenticated, IsAssessmentFrontendAuthenticated)
+    permission_classes = (IsApplicationBackendAuthenticated,)
+
+class ApplicationTypeList(ListAPIView):
+    queryset = ApplicationType.active_objects.all()
+    serializer_class = ApplicationTypeSerializer
+    renderer_classes = (CustomRenderer,)
+    permission_classes = (IsApplicationBackendOrIsAssessmentAdminAuthenticated,)
 
 
 class ApplicationTypeDetail(CustomRetrieveUpdateDestroyAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    # permission_classes = (IsApplicationBackendAuthenticated,)
+    permission_classes = (IsApplicationBackendAuthenticated,)
     lookup_field = 'uid'
 
     def delete(self, request, *args, **kwargs):
         application_type_id = self.kwargs.get('uid')
         try:
-            application_type = ApplicationType.objects.get(
-                uid=application_type_id)
+            application_type = ApplicationType.objects.get(uid=application_type_id)
             application_type.is_delete = not application_type.is_delete
             application_type.save()
             if application_type.is_delete:
@@ -189,17 +186,19 @@ class GetAssessmentForCandidateAPIView(CustomListCreateAPIView):
     permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                application_type = ApplicationType.active_objects.get(
-                    title__iexact=serializer.data.get('course'))
-                assessment = Assessment.active_objects.filter(
-                    application_type=application_type).latest('date_created')
-                assessment_data = AssessmentSerializer(assessment)
-                return Response(assessment_data.data,
-                                status=status.HTTP_200_OK)
-            except (ApplicationType.DoesNotExist, Assessment.DoesNotExist):
-                raise ValidationError(
-                    'ApplicationType or Assessment does not exist.')
-        return Response({'error': serializer.errors})
+        if request.data.get('data'):
+            data = decrypt(request.data['data'])
+            request._full_data = data
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                try:
+                    application_type = ApplicationType.active_objects.get(title__iexact=serializer.data.get('course'))
+                    assessment = Assessment.active_objects.filter(application_type=application_type).latest(
+                        'date_created')
+                    assessment_data = AssessmentSerializer(assessment)
+                    return Response(assessment_data.data,
+                                    status=status.HTTP_200_OK)
+                except (ApplicationType.DoesNotExist, Assessment.DoesNotExist):
+                    raise ValidationError('ApplicationType or Assessment does not exist.')
+            return Response({'error': serializer.errors})
+        return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)

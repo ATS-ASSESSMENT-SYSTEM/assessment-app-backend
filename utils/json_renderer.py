@@ -3,6 +3,7 @@ import json
 
 from rest_framework.renderers import JSONRenderer
 from django.conf import settings as app_settings
+
 STATUS = app_settings.STATUS_CODES
 
 from Cryptodome.Cipher import AES
@@ -17,7 +18,6 @@ class CustomRenderer(JSONRenderer):
         cipher = AES.new(key, AES.MODE_CBC, iv)
         s = json.dumps(data)
         encrypted_data = base64.b64encode(cipher.encrypt(pad(str.encode(s), AES.block_size))).decode('utf-8')
-        # print(encrypted_data)
         status_code = renderer_context["response"].status_code
         response = {
             "status": STATUS['success'],

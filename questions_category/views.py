@@ -19,7 +19,7 @@ from app_core.permissions import IsAssessmentAdminAuthenticated
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
-from utils.utils import CustomListCreateAPIView, CustomRetrieveUpdateDestroyAPIView
+from utils.utils import CustomListCreateAPIView, CustomRetrieveUpdateDestroyAPIView, decrypt
 
 
 class MultipleFieldLookupMixin:
@@ -71,13 +71,6 @@ class QuestionCreateAPIView(CustomListCreateAPIView):
     serializer_class = QuestionSerializer
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsAssessmentAdminAuthenticated,)
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class QuestionListAPIView(ListAPIView):
