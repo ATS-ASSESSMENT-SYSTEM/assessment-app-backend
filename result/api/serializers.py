@@ -41,21 +41,10 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 'date_created')
 
             if check_session.exists():
-<<<<<<< HEAD
+
                 if ((timezone.now() - check_session.first().date_created).total_seconds() / 3600) \
                         > assessment.total_duration:
                     raise serializers.ValidationError("Your assessment session has expired.")
-=======
-                if ((
-                        timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
-                    raise serializers.ValidationError(
-                        "Your assessment session has expired.")
-<<<<<<< HEAD
-            
-            
-=======
->>>>>>> 73a479f8115b52b0248ef5d6268c82d08c968a57
->>>>>>> 60fa2d5eff127bf7647e69f87fa3f2d7c87cd2c4
 
             if question_type == 'Multi-response':
                 mr_answers = attrs.get('mr_answers')
@@ -254,10 +243,6 @@ class SessionProcessorSerializer(serializers.Serializer):
                                                          status='FINISHED'
                                                          )
         session_category.save()
-<<<<<<< HEAD
-
-=======
->>>>>>> 73a479f8115b52b0248ef5d6268c82d08c968a57
         return validated_data
 
 
