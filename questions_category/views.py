@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
+from app_core.permissions import IsAssessmentAdminAuthenticated
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
@@ -44,12 +45,14 @@ class CategoryListCreateAPIView(CustomListCreateAPIView):
     serializer_class = CategorySerializer
     queryset = Category.active_objects.all()
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
 
 class CategoryRetrieveUpdateDeleteAPIView(CustomRetrieveUpdateDestroyAPIView):
     serializer_class = CategorySerializer
     queryset = Category.active_objects.all()
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def delete(self, request, *args, **kwargs):
         category_id = self.kwargs.get('pk')
@@ -67,6 +70,7 @@ class CategoryRetrieveUpdateDeleteAPIView(CustomRetrieveUpdateDestroyAPIView):
 class QuestionCreateAPIView(CustomListCreateAPIView):
     serializer_class = QuestionSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -81,6 +85,7 @@ class QuestionListAPIView(ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['test_category', 'question_type', 'question_category']
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def get_queryset(self):
         category_pk = self.kwargs.get('pk')
@@ -91,6 +96,7 @@ class QuestionRetrieveUpdateDeleteAPIView(MultipleFieldLookupMixin, CustomRetrie
     serializer_class = QuestionSerializer
     renderer_classes = (CustomRenderer,)
     lookup_fields = ('test_category_id', 'id')
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def get_queryset(self):
         category_id = self.kwargs.get('test_category_id')
@@ -113,6 +119,7 @@ class UpdateChoiceAPIView(MultipleFieldLookupMixin, CustomRetrieveUpdateDestroyA
     serializer_class = ChoiceSerializer
     renderer_classes = (CustomRenderer,)
     lookup_fields = ('question_id', 'id')
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def get_queryset(self):
         question_id = self.kwargs.get('question_id')

@@ -1,15 +1,9 @@
-import json
-
-from django.core import serializers
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from django.db.models import Sum
-from django.db.models import Sum, Q
 
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, Question, Choice, OpenEndedAnswer
-
-
 # from api.serializers import AssessmentImageSerializer
 
 def call_json(type_: str):
@@ -39,138 +33,66 @@ class Result(models.Model):
         return self.category_result_set.all()
 
     @property
-    def assessment_category_count(self):
-        return self.assessment.category.all().count()
-
-    @property
     def result_status(self) -> str:
-        category_check = Category_Result.objects.filter(result_id=self.id, has_open_ended=True)
-        if category_check.exists():
-            opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk')
-                                                      , is_marked=False)
-            print("ch=>", opa_check)
-            if opa_check.exists():
+        category_check = Category_Result.objects.filter(result_id=self.id)
+        print(1, category_check)
+        if category_check.exclude(has_open_ended=True).exists():
+            print('Entered exists')
+            opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk'))
+            print(opa_check, opa_check.exclude(is_marked=False))
+            if opa_check.exclude(is_marked=False):
                 return 'Inconclusive'
 
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark
-        print("info", assessment_benchmark, self.result_total)
+        print(assessment_benchmark, self.result_total)
+        # if assessment_benchmark > self.result_total:
+        #     return 'Failed'
+        #
+        # if assessment_benchmark < self.result_total:
+        #     return 'Passed'
 
-        mark_obtained = self.percentage_total
-
-        if assessment_benchmark > mark_obtained:
-            return 'Failed'
-        if assessment_benchmark < mark_obtained:
-            return 'Passed'
+        return 'Still Processing'
 
     @property
     def result_total(self) -> int:
-        # fetch all categories for the candidate
-        candidate_category = Category_Result.objects.filter(result_id=self.id)
-        # fetch all category ofr the assessment
-        assessment_category = self.assessment.category.all()
-
-        q = Category_Result.objects.filter(result_id=self.id).aggregate(Sum('score'))
-
-        if candidate_category.count() == assessment_category.count():
-            return q['score__sum']
-
-        unfinished_category = assessment_category.exclude(pk__in=candidate_category.values_list('category'))
-
-        unfinished_category_answer = Session_Answer.objects.filter(category__in=unfinished_category,
-                                                                   assessment=self.assessment,
-                                                                   candidate=self.candidate,
-                                                                   is_correct=True
-                                                                   )
-        available_category = unfinished_category.filter(pk__in=unfinished_category_answer.values_list('category'))
-        print("checks=>", unfinished_category_answer.values_list('category'),
-              unfinished_category.values_list('id'), available_category)
-
-        check_category = Category_Result.objects.filter(
-            result_id=self.id,
-            category__in=unfinished_category_answer.values_list('category')
-        )
-        print(check_category.exists())
-        if not check_category.exists():
-            # create un_finished_category
-            for category in available_category:
-                correct_score = Session_Answer.objects.filter(Q(question_type='Multi-choice') |
-                                                              Q(question_type='Multi-response'),
-                                                              is_correct=True,
-                                                              candidate=self.candidate,
-                                                              assessment=self.assessment,
-                                                              category=category
-                                                              )
-
-                has_open_ended_answer = OpenEndedAnswer.objects.filter(candidate=self.candidate,
-                                                                       category=category)
-
-                has_open_ended = bool(has_open_ended_answer.count())
-
-                get_or_create = Category_Result(
-                    result_id=self.id,
-                    category=category,
-                    score=correct_score.count(),
-                    has_open_ended=has_open_ended,
-                    status='STARTED'
-                )
-                get_or_create.save()
-
-        return q['score__sum'] + unfinished_category_answer.count()
+        return Category_Result.objects.filter(result_id=self.id). \
+            aggregate(Sum('score'))
 
     @property
     def duration(self):
         print(self.candidate, self.id)
-        sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate) \
+        sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate)\
             .order_by('date_created')
         print(sessions.first())
+        # return  sessions.first().date_created
         return {
             "time_started": sessions.first().date_created,
             "time_ended"
             : sessions.last().date_created
         }
 
-    @property
-    def percentage_total(self):
-        # mark_obtainable = Category_Result.objects.filter(result_id=self.assessment)
-        total_questions = self.assessment.number_of_questions_in_assessment
-        total_mark_obtained = self.result_total
-        print("total=>", total_mark_obtained)
-        return (total_mark_obtained / total_questions) * 100
-
+    # @property
+    # def percentage_total(self):
+    #         mark_obtainable = Category.objects.filter()
     @property
     def images(self):
         q = AssessmentImages.objects.filter(assessment=self.assessment, candidate=self.candidate)
-        if q.exists():
-            return json.loads(q)
+        # return AssessmentImageSerializer(q, many=True).data
         return []
-
-    @property
-    def feedback(self):
-        try:
-            fb = AssessmentFeedback.objects.get(applicant_info__applicantId=self.candidate,
-                                                assessment=self.assessment)
-
-            return fb.feedback
-        except AssessmentFeedback.DoesNotExist:
-            return {}
 
     class Meta:
         unique_together = ('assessment', 'candidate')
 
 
 class Category_Result(models.Model):
-    STATUS = (
-        ('STARTED', 'STARTED'),
-        ('FINISHED', 'FINISHED')
-    )
     result = models.ForeignKey(Result, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     score = models.IntegerField()
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     has_open_ended = models.BooleanField(default=False)
-    status = models.CharField(max_length=100, default="STARTED")
+    status = models.CharField(max_length=100, default="TAKEN")
 
     def __str__(self) -> str:
         return f'{self.result} result for {self.category}'
@@ -222,15 +144,7 @@ class AssessmentMedia(models.Model):
 
 
 class AssessmentFeedback(models.Model):
-    REACTION = (
-        ('Not Satisfied', "Not Satisfied"),
-        ('Bad', 'Bad'),
-        ('Ok', 'Ok'),
-        ('Just Ok', 'Just Ok'),
-        ('Very Satisfied', 'Very Satisfied')
-    )
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     applicant_info = models.JSONField(default=call_json(type_='dict'), null=True, blank=True)
     feedback = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    reaction = models.CharField(null=True, blank=True, max_length=50, choices=REACTION, default='Ok')

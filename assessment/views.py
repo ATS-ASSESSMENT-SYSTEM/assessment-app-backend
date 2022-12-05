@@ -41,6 +41,7 @@ class AssesmentDetail(CustomRetrieveUpdateDestroyAPIView):
     queryset = Assessment.active_objects.all()
     serializer_class = AssessmentSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def delete(self, request, *args, **kwargs):
         assessment_id = self.kwargs.get('pk')
@@ -67,6 +68,7 @@ class CategoryList(generics.ListAPIView):
 class AddCategoryToAssessmentAPIView(CustomRetrieveUpdateDestroyAPIView):
     queryset = Category.active_objects.all()
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentAdminAuthenticated,)
 
     def patch(self, request, assessment_id, id):
         try:
@@ -88,6 +90,7 @@ class AddCategoryToAssessmentAPIView(CustomRetrieveUpdateDestroyAPIView):
 class GenerateRandomQuestions(CustomListCreateAPIView):
     serializer_class = StartAssessmentSerializer
     renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
 
     def post(self, request, assessment_id, category_id):
         serializer = self.get_serializer(data=request.data)
@@ -154,7 +157,7 @@ class ApplicationTypeList(CustomListCreateAPIView):
     queryset = ApplicationType.active_objects.all()
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
-    # permission_classes = (IsApplicationBackendAuthenticated,)
+    permission_classes = (IsApplicationBackendAuthenticated, IsAssessmentFrontendAuthenticated)
 
 
 class ApplicationTypeDetail(CustomRetrieveUpdateDestroyAPIView):
