@@ -62,8 +62,10 @@ class Question(models.Model):
 
     test_category = models.ForeignKey(Category, on_delete=models.CASCADE)
     question_text = models.TextField()
-    question_type = models.CharField(max_length=150, default='Multi-choice', choices=TYPES)
-    question_category = models.CharField(max_length=150, choices=QUESTION_CATEGORIES, default='Real')
+    question_type = models.CharField(
+        max_length=150, default='Multi-choice', choices=TYPES)
+    question_category = models.CharField(
+        max_length=150, choices=QUESTION_CATEGORIES, default='Real')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     is_delete = models.BooleanField(default=False)
@@ -77,9 +79,9 @@ class Question(models.Model):
 
     class Meta:
         ordering = ('-created_date',)
-        
-    def session_answer(self):
-        return self.session_answer_set.all()
+
+    def SessionAnswer(self):
+        return self.SessionAnswer_set.all()
 
     def choices(self):
         return self.choice_set.filter(is_delete=False)
@@ -99,20 +101,22 @@ class Choice(models.Model):
     objects = models.Manager()
     active_objects = ActiveManager()
     deleted_objects = DeleteManager()
-    
+
     def __str__(self):
         return self.choice_text
 
 
 class OpenEndedAnswer(models.Model):
-    question = models.ForeignKey(Question, related_name="answer", on_delete=models.CASCADE)
+    question = models.ForeignKey(
+        Question, related_name="answer", on_delete=models.CASCADE)
     candidate = models.CharField(max_length=150, null=True, blank=True)
     answer_text = models.TextField()
     is_correct = models.BooleanField(default=False)
     is_marked = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, null=True, blank=True)
     is_delete = models.BooleanField(default=False)
 
     objects = models.Manager()
