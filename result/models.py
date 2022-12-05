@@ -17,20 +17,12 @@ def call_json(type_: str):
         return dict
     return list
 
-
 class Result(models.Model):
-    STATUS = (
-        ("Passed", "PASSED"),
-        ("Failed", "FAILED"),
-        ('Inconclusive', "INCONCLUSIVE")
-    )
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     candidate = models.CharField(max_length=150)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
-    status = models.CharField(
-        max_length=150, choices=STATUS, default='Inconclusive')
     applicant_info = models.JSONField(
         default=call_json(type_='dict'), null=True, blank=True)
 
@@ -49,9 +41,8 @@ class Result(models.Model):
         category_check = CategoryResult.objects.filter(
             result_id=self.id, has_open_ended=True)
         if category_check.exists():
-            opa_check = OpenEndedAnswer.object.filter(
-                category__in=category_check.values_list('pk'), is_marked=False)
-            print("ch=>", opa_check)
+            opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk')
+                                                      ,is_marked=False)
             if opa_check.exists():
                 return 'Inconclusive'
 
@@ -96,7 +87,6 @@ class Result(models.Model):
             result_id=self.id,
             category__in=unfinished_category_answer.values_list('category')
         )
-        print(check_category.exists())
         if not check_category.exists():
             # create un_finished_category
             for category in available_category:
@@ -126,7 +116,6 @@ class Result(models.Model):
 
     @property
     def duration(self):
-        print(self.candidate, self.id)
         sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate) \
             .order_by('date_created')
         print(sessions.first())
@@ -140,7 +129,7 @@ class Result(models.Model):
         # mark_obtainable = CategoryResult.objects.filter(result_id=self.assessment)
         total_questions = self.assessment.number_of_questions_in_assessment
         total_mark_obtained = self.result_total
-        print("total=>", total_mark_obtained)
+
         return (total_mark_obtained / total_questions) * 100
 
     @property

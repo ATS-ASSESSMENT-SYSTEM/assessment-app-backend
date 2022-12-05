@@ -1,6 +1,3 @@
-import json
-from abc import ABC
-
 from django.utils import timezone
 from rest_framework import serializers
 from django.db.models import Sum, Q
@@ -44,12 +41,21 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 'date_created')
 
             if check_session.exists():
+<<<<<<< HEAD
+                if ((timezone.now() - check_session.first().date_created).total_seconds() / 3600) \
+                        > assessment.total_duration:
+                    raise serializers.ValidationError("Your assessment session has expired.")
+=======
                 if ((
                         timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
                     raise serializers.ValidationError(
                         "Your assessment session has expired.")
+<<<<<<< HEAD
             
             
+=======
+>>>>>>> 73a479f8115b52b0248ef5d6268c82d08c968a57
+>>>>>>> 60fa2d5eff127bf7647e69f87fa3f2d7c87cd2c4
 
             if question_type == 'Multi-response':
                 mr_answers = attrs.get('mr_answers')
@@ -248,6 +254,10 @@ class SessionProcessorSerializer(serializers.Serializer):
                                                          status='FINISHED'
                                                          )
         session_category.save()
+<<<<<<< HEAD
+
+=======
+>>>>>>> 73a479f8115b52b0248ef5d6268c82d08c968a57
         return validated_data
 
 
@@ -365,7 +375,7 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
 
     def get_percentage_mark(self, objs):
-        print("division=>0", objs.score, self.get_no_of_questions(objs))
+
         return (objs.score / self.get_no_of_questions(objs)) * 100
 
     def get_open_ended_questions(self, objs):
