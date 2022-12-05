@@ -1,6 +1,8 @@
+import json
+import queue
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Sum, Q
 
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, Question, Choice, OpenEndedAnswer
@@ -80,7 +82,7 @@ class Result(models.Model):
         if not check_category.exists():
             # create un_finished_category
             for category in available_category:
-                correct_score = SessionAnswer.objects.filter(Q(question_type='Multi-choice') |
+                correct_score = SessionAnswer.objects.filter(queue(question_type='Multi-choice') |
                                                              Q(question_type='Multi-response'),
                                                              is_correct=True,
                                                              candidate=self.candidate,
