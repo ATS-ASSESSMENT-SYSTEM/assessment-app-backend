@@ -50,7 +50,12 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                         timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
                     raise serializers.ValidationError(
                         "Your assessment session has expired.")
+<<<<<<< HEAD
+            
+            
+=======
 >>>>>>> 73a479f8115b52b0248ef5d6268c82d08c968a57
+>>>>>>> 60fa2d5eff127bf7647e69f87fa3f2d7c87cd2c4
 
             if question_type == 'Multi-response':
                 mr_answers = attrs.get('mr_answers')
@@ -488,6 +493,6 @@ class ResultInitializerSerializer(serializers.ModelSerializer):
                              applicant_info=validated_data.get(
                                  'applicant_info'),
                              candidate=validated_data.get(
-                                 'applicant_info').applicantId
+                                 'applicant_info').applicantion_id
                              )
         return validated_data

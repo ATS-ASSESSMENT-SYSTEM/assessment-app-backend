@@ -81,7 +81,39 @@ class IsApplicationBackendAuthenticated(BasePermission):
             else:
                 de_hash = None
             hash = hashlib.sha256(de_hash.encode('utf8')).hexdigest()
-            print(hash)
+            print("admin", hash)
+        except:
+            raise AuthenticationFailed()
+        if hash_key != hash:
+            return False
+        return True
+
+
+class IsApplicationBackendOrIsAssessmentAdminAuthenticated(BasePermission):
+    message = "Permission not granted."
+
+    def has_permission(self, request, view):
+        try:
+            API_KEY = request.META['HTTP_API_KEY']
+            request_ts = request.META['HTTP_REQUEST_TS']
+            hash_key = request.META['HTTP_HASH_KEY']
+        except KeyError as key:
+            raise NotAuthenticated(
+                f'Authentication credentials not provided, {key}'
+            )
+        application_backend_api_key = config('APPLICATION_BACKEND_API_KEY')
+        application_backend_secret_key = config('APPLICATION_BACKEND_SECRET_KEY')
+        assessment_admin_api_key = config('ASSESSMENT_ADMIN_API_KEY')
+        assessment_admin_secret_key = config('ASSESSMENT_ADMIN_SECRET_KEY')
+        try:
+            if API_KEY == application_backend_api_key:
+                de_hash = application_backend_api_key + application_backend_secret_key + request_ts
+            elif API_KEY == assessment_admin_api_key:
+                de_hash = assessment_admin_api_key + assessment_admin_secret_key + request_ts
+            else:
+                de_hash = None
+            hash = hashlib.sha256(de_hash.encode('utf8')).hexdigest()
+            print("admin", hash)
         except:
             raise AuthenticationFailed()
         if hash_key != hash:
