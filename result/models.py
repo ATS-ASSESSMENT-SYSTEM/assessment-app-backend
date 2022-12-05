@@ -1,11 +1,15 @@
 import json
-import queue
+
+from django.core import serializers
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
+from django.db.models import Sum
 from django.db.models import Sum, Q
 
 from assessment.models import Assessment, AssessmentSession
 from questions_category.models import Category, Question, Choice, OpenEndedAnswer
+
+
 # from api.serializers import AssessmentImageSerializer
 
 def call_json(type_: str):
@@ -29,6 +33,10 @@ class Result(models.Model):
         return self.CategoryResult_set.all()
 
     @property
+    def assessment_category_count(self):
+        return self.assessment.category.all().count()
+
+    @property
     def result_status(self) -> str:
         category_check = CategoryResult.objects.filter(
             result_id=self.id, has_open_ended=True)
@@ -40,14 +48,14 @@ class Result(models.Model):
 
         assessment = Assessment.objects.get(pk=self.assessment.pk)
         assessment_benchmark = assessment.benchmark
-        print(assessment_benchmark, self.result_total)
-        # if assessment_benchmark > self.result_total:
-        #     return 'Failed'
-        #
-        # if assessment_benchmark < self.result_total:
-        #     return 'Passed'
+        print("info", assessment_benchmark, self.result_total)
 
-        return 'Still Processing'
+        mark_obtained = self.percentage_total
+
+        if assessment_benchmark > mark_obtained:
+            return 'Failed'
+        if assessment_benchmark < mark_obtained:
+            return 'Passed'
 
     @property
     def result_total(self) -> int:
@@ -82,7 +90,7 @@ class Result(models.Model):
         if not check_category.exists():
             # create un_finished_category
             for category in available_category:
-                correct_score = SessionAnswer.objects.filter(queue(question_type='Multi-choice') |
+                correct_score = SessionAnswer.objects.filter(Q(question_type='Multi-choice') |
                                                              Q(question_type='Multi-response'),
                                                              is_correct=True,
                                                              candidate=self.candidate,
@@ -111,7 +119,6 @@ class Result(models.Model):
         sessions = AssessmentSession.objects.filter(assessment_id=self.assessment.pk, candidate_id=self.candidate) \
             .order_by('date_created')
         print(sessions.first())
-        # return  sessions.first().date_created
         return {
             "time_started": sessions.first().date_created,
             "time_ended": sessions.last().date_created
@@ -133,6 +140,16 @@ class Result(models.Model):
             return json.loads(q)
         return []
 
+    @property
+    def feedback(self):
+        try:
+            fb = AssessmentFeedback.objects.get(applicant_info__applicantId=self.candidate,
+                                                assessment=self.assessment)
+
+            return fb.feedback
+        except AssessmentFeedback.DoesNotExist:
+            return {}
+
     class Meta:
         unique_together = ('assessment', 'candidate')
 
@@ -148,7 +165,7 @@ class CategoryResult(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     has_open_ended = models.BooleanField(default=False)
-    status = models.CharField(max_length=100, default="TAKEN")
+    status = models.CharField(max_length=100, default="STARTED")
 
     def __str__(self) -> str:
         return f'{self.result} result for {self.category}'
@@ -206,6 +223,13 @@ class AssessmentMedia(models.Model):
 
 
 class AssessmentFeedback(models.Model):
+    REACTION = (
+        ('Not Satisfied', "Not Satisfied"),
+        ('Bad', 'Bad'),
+        ('Ok', 'Ok'),
+        ('Just Ok', 'Just Ok'),
+        ('Very Satisfied', 'Very Satisfied')
+    )
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE)
     applicant_info = models.JSONField(
         default=call_json(type_='dict'), null=True, blank=True)
