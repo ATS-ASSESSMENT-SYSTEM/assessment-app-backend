@@ -107,7 +107,7 @@ class GenerateRandomQuestions(CustomListCreateAPIView):
                     if current_session.exists():
                         questions = current_session.first().question_list.all()
                         session = current_session.first()
-                        answers = Session_Answer.objects.filter(session=current_session.first().session_id,
+                        answers = SessionAnswer.objects.filter(session=current_session.first().session_id,
                                                                 candidate=serializer.data.get('candidate_id'))
                         open_ended_answer = OpenEndedAnswer.active_objects.filter(
                             candidate=serializer.data.get('candidate_id'), category=category)
