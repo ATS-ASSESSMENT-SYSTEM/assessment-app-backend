@@ -41,6 +41,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 'date_created')
 
             if check_session.exists():
+
                 if ((timezone.now() - check_session.first().date_created).total_seconds() / 3600) \
                         > assessment.total_duration:
                     raise serializers.ValidationError("Your assessment session has expired.")
