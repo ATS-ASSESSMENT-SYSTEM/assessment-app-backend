@@ -16,10 +16,12 @@ from Cryptodome.Util.Padding import pad, unpad
 
 def decrypt(data):
     b64 = json.loads(json.dumps(data))
-    key = b'$\x96& \xb4"\xbc,\x88\xea\xd2\xf26\xb0f\xfe'
-    iv = b'%\n\xed\xa8\xdf?Tm\xd6v\xaeW9\xf4i\xb5'
+    key = "wjqy62fB+dwz2gyz4sMePe9u2RsMVIyuaA6wPgUeXjw="
+    iv = "gNyBAsNdWQEwHvbAm8g5Jg=="
+    key_in_bytes = base64.b64decode(key)
+    vector_in_bytes = base64.b64decode(iv)
     ct = base64.b64decode(b64)
-    cipher = AES.new(key, AES.MODE_CBC, iv)
+    cipher = AES.new(key_in_bytes, AES.MODE_CBC, vector_in_bytes)
     data = unpad(cipher.decrypt(ct), AES.block_size)
     return json.loads(data.decode('utf-8'))
 
