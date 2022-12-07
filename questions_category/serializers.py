@@ -45,18 +45,18 @@ class QuestionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     'choices field must be provided.')
 
-            if len(choices) < 2:
+            elif len(choices) < 2:
                 raise serializers.ValidationError('Choices must be 2 at least')
 
-        if question_type == 'Multi-response':
+        elif question_type == 'Multi-response':
             if not choices:
                 raise serializers.ValidationError(
                     'choices field must be provided.')
 
-            if len(choices) < 3:
+            elif len(choices) < 3:
                 raise serializers.ValidationError('Choices must be 3 at least')
 
-        if question_type == 'Open-ended':
+        elif question_type == 'Open-ended':
             if choices:
                 raise serializers.ValidationError(
                     'Open ended question have no choices')
@@ -105,12 +105,12 @@ class QuestionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "You can't swap the question type.")
 
-        if question_type == 'Multi-choice':
+        elif question_type == 'Multi-choice':
             if instance.question_type == 'Open-ended' or instance.question_type == 'Multi-response':
                 raise serializers.ValidationError(
                     "You can't swap the question type.")
 
-        if question_type == 'Multi-response':
+        elif question_type == 'Multi-response':
             if instance.question_type == 'Open-ended' or instance.question_type == 'Multi-choice':
                 raise serializers.ValidationError(
                     "You can't swap the question type.")
