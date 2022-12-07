@@ -108,7 +108,7 @@ class GenerateRandomQuestions(CustomListCreateAPIView):
                         questions = current_session.first().question_list.all()
                         session = current_session.first()
                         answers = SessionAnswer.objects.filter(session=current_session.first().session_id,
-                                                                candidate=serializer.data.get('candidate_id'))
+                                                               candidate=serializer.data.get('candidate_id'))
                         open_ended_answer = OpenEndedAnswer.active_objects.filter(
                             candidate=serializer.data.get('candidate_id'), category=category)
                         q_answers = SessionAnswerSerializer(answers, many=True)
@@ -152,6 +152,7 @@ class ApplicationTypeCreate(CustomListCreateAPIView):
     serializer_class = ApplicationTypeSerializer
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsApplicationBackendAuthenticated,)
+
 
 class ApplicationTypeList(ListAPIView):
     queryset = ApplicationType.active_objects.all()

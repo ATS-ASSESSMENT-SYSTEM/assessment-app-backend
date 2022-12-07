@@ -41,21 +41,9 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 'date_created')
 
             if check_session.exists():
-<<<<<<< HEAD
                 if ((timezone.now() - check_session.first().date_created).total_seconds() / 3600) \
                         > assessment.total_duration:
                     raise serializers.ValidationError("Your assessment session has expired.")
-=======
-                if ((
-                        timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
-                    raise serializers.ValidationError(
-                        "Your assessment session has expired.")
-<<<<<<< HEAD
-            
-            
-=======
->>>>>>> 73a479f8115b52b0248ef5d6268c82d08c968a57
->>>>>>> 60fa2d5eff127bf7647e69f87fa3f2d7c87cd2c4
 
             if question_type == 'Multi-response':
                 mr_answers = attrs.get('mr_answers')
@@ -112,10 +100,10 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
             choice = validated_data.get("choice")
             print(session, validated_data)
 
-            SessionAnswer = SessionAnswer.objects.filter(**validated_data)
+            sessionAnswer = SessionAnswer.objects.filter(**validated_data)
 
-            if SessionAnswer.exists():
-                if SessionAnswer.first().question_type != question_type:
+            if sessionAnswer.exists():
+                if sessionAnswer.first().question_type != question_type:
                     raise serializers.ValidationError(
                         "You can't interchange question type")
 
@@ -127,7 +115,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 else:
                     all_correct = True
 
-                if SessionAnswer.exists():
+                if sessionAnswer.exists():
                     SessionAnswer_instance = SessionAnswer.first()
                     SessionAnswer_instance.is_correct = all_correct
                     SessionAnswer_instance.time_remaining = session_remaining_time
@@ -145,7 +133,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
             if question_type == "Multi-choice":
 
                 is_correct_value = validated_data.pop('is_correct')
-                if SessionAnswer.exists():
+                if sessionAnswer.exists():
                     SessionAnswer_instance = SessionAnswer.first()
                     SessionAnswer_instance.is_correct = is_correct_value
                     SessionAnswer_instance.time_remaining = session_remaining_time
@@ -160,7 +148,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             if question_type == "Open-ended":
 
-                if SessionAnswer.exists():
+                if sessionAnswer.exists():
                     SessionAnswer_instance = SessionAnswer.first()
                     SessionAnswer_instance.time_remaining = session_remaining_time
                     SessionAnswer_instance.question_type = 'Open-ended'
@@ -254,10 +242,6 @@ class SessionProcessorSerializer(serializers.Serializer):
                                                          status='FINISHED'
                                                          )
         session_category.save()
-<<<<<<< HEAD
-
-=======
->>>>>>> 73a479f8115b52b0248ef5d6268c82d08c968a57
         return validated_data
 
 
@@ -312,7 +296,6 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 
 class AssessmentFeedbackSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = AssessmentFeedback
         fields = ('assessment', 'applicant_info', 'feedback', 'reaction')
@@ -375,7 +358,6 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
 
     def get_percentage_mark(self, objs):
-
         return (objs.score / self.get_no_of_questions(objs)) * 100
 
     def get_open_ended_questions(self, objs):
