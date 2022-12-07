@@ -101,10 +101,10 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
             choice = validated_data.get("choice")
             print(session, validated_data)
 
-            SessionAnswer = SessionAnswer.objects.filter(**validated_data)
+            sessionAnswer = SessionAnswer.objects.filter(**validated_data)
 
-            if SessionAnswer.exists():
-                if SessionAnswer.first().question_type != question_type:
+            if sessionAnswer.exists():
+                if sessionAnswer.first().question_type != question_type:
                     raise serializers.ValidationError(
                         "You can't interchange question type")
 
@@ -116,7 +116,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 else:
                     all_correct = True
 
-                if SessionAnswer.exists():
+                if sessionAnswer.exists():
                     SessionAnswer_instance = SessionAnswer.first()
                     SessionAnswer_instance.is_correct = all_correct
                     SessionAnswer_instance.time_remaining = session_remaining_time
@@ -134,7 +134,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
             if question_type == "Multi-choice":
 
                 is_correct_value = validated_data.pop('is_correct')
-                if SessionAnswer.exists():
+                if sessionAnswer.exists():
                     SessionAnswer_instance = SessionAnswer.first()
                     SessionAnswer_instance.is_correct = is_correct_value
                     SessionAnswer_instance.time_remaining = session_remaining_time
@@ -149,7 +149,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             if question_type == "Open-ended":
 
-                if SessionAnswer.exists():
+                if sessionAnswer.exists():
                     SessionAnswer_instance = SessionAnswer.first()
                     SessionAnswer_instance.time_remaining = session_remaining_time
                     SessionAnswer_instance.question_type = 'Open-ended'
@@ -297,7 +297,6 @@ class AssessmentSerializer(serializers.ModelSerializer):
 
 
 class AssessmentFeedbackSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = AssessmentFeedback
         fields = ('assessment', 'applicant_info', 'feedback', 'reaction')
@@ -360,7 +359,6 @@ class CandidateCategoryResultSerializer(serializers.ModelSerializer):
         return Question.objects.filter(test_category_id=objs.category.pk).count()
 
     def get_percentage_mark(self, objs):
-
         return (objs.score / self.get_no_of_questions(objs)) * 100
 
     def get_open_ended_questions(self, objs):
