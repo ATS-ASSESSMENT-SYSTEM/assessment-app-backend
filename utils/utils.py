@@ -33,9 +33,13 @@ class CustomListCreateAPIView(ListCreateAPIView):
 
     def post(self, request, *args, **kwargs):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            return super(CustomListCreateAPIView, self).post(request, *args, **kwargs)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                return super(CustomListCreateAPIView, self).post(request, *args, **kwargs)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -46,16 +50,24 @@ class CustomRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
 
     def put(self, request, *args, **kwargs):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            return super(CustomRetrieveUpdateDestroyAPIView, self).put(request, *args, **kwargs)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                return super(CustomRetrieveUpdateDestroyAPIView, self).put(request, *args, **kwargs)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, *args, **kwargs):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            return super(CustomRetrieveUpdateDestroyAPIView, self).patch(request, *args, **kwargs)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                return super(CustomRetrieveUpdateDestroyAPIView, self).patch(request, *args, **kwargs)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
