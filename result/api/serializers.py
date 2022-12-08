@@ -23,7 +23,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         try:
-            print("attribute=>", attrs)
+            # print("attribute=>", attrs)
             session = attrs.get('session')
             assessment = attrs.get('assessment')
 
@@ -85,7 +85,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Invalid Session ID')
 
     def create(self, validated_data):
-        print("validate=>", validated_data)
+
         try:
             session_remaining_time = validated_data.pop('time_remaining')
 
@@ -99,7 +99,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             session = validated_data.get("session")
             choice = validated_data.get("choice")
-            print(session, validated_data)
+
 
             sessionAnswer = SessionAnswer.objects.filter(**validated_data)
 
@@ -117,40 +117,41 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                     all_correct = True
 
                 if sessionAnswer.exists():
-                    SessionAnswer_instance = SessionAnswer.first()
+                    SessionAnswer_instance = sessionAnswer.first()
                     SessionAnswer_instance.is_correct = all_correct
                     SessionAnswer_instance.time_remaining = session_remaining_time
                     SessionAnswer_instance.question_type = question_type
                     SessionAnswer_instance.save()
 
-                    return SessionAnswer_instance
+                    return 'Answer saved.'
                 new_SessionAnswer = SessionAnswer(**validated_data, is_correct=all_correct,
                                                   time_remaining=session_remaining_time,
                                                   mr_answers_id=mr_answers
                                                   )
                 new_SessionAnswer.save()
-                return new_SessionAnswer
+                return 'Answer saved.'
 
             if question_type == "Multi-choice":
 
                 is_correct_value = validated_data.pop('is_correct')
                 if sessionAnswer.exists():
-                    SessionAnswer_instance = SessionAnswer.first()
+                    SessionAnswer_instance = sessionAnswer.first()
                     SessionAnswer_instance.is_correct = is_correct_value
                     SessionAnswer_instance.time_remaining = session_remaining_time
                     SessionAnswer_instance.choice = choice
                     SessionAnswer_instance.question_type = 'Multi-choice'
                     SessionAnswer_instance.save()
-                    return SessionAnswer_instance
+                    return 'Answer saved.'
                 new_SessionAnswer = SessionAnswer(**validated_data, is_correct=is_correct_value,
                                                   time_remaining=session_remaining_time)
                 new_SessionAnswer.save()
-                return new_SessionAnswer
+
+                return 'Answer saved.'
 
             if question_type == "Open-ended":
 
                 if sessionAnswer.exists():
-                    SessionAnswer_instance = SessionAnswer.first()
+                    SessionAnswer_instance = sessionAnswer.first()
                     SessionAnswer_instance.time_remaining = session_remaining_time
                     SessionAnswer_instance.question_type = 'Open-ended'
                     SessionAnswer_instance.save()
@@ -160,7 +161,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                                                    category=validated_data.get(
                                                        'category'),
                                                    ).update(answer_text=answer_text)
-                    return SessionAnswer_instance
+                    return 'Answer saved.'
                 new_SessionAnswer = SessionAnswer(**validated_data,
                                                   time_remaining=session_remaining_time, question_type='Open-ended', )
 
@@ -173,7 +174,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                                                  )
                 new_SessionAnswer.save()
                 save_op_answer.save()
-                return new_SessionAnswer
+                return 'Answer saved.'
 
             raise serializers.ValidationError(
                 'Invalid data provided, please confirm and check again')
@@ -472,7 +473,7 @@ class ResultInitializerSerializer(serializers.ModelSerializer):
         fields = ('assessment', 'applicant_info')
 
     def create(self, validated_data):
-        Result.object.create(assessment=validated_data.get('assessment'),
+        Result.objects.create(assessment=validated_data.get('assessment'),
                              applicant_info=validated_data.get(
                                  'applicant_info'),
                              candidate=validated_data.get(
