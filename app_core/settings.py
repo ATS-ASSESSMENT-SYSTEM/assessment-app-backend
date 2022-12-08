@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-lkno=6=ntjrt5b6i1l#!c4@5@076=t*(_s(42p(2u2(ridz+(('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['assessbk.afexats.com', 'localhost', '127.0.0.1', 'https://afex-ats-assessment.netlify.app/']
 
