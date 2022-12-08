@@ -27,6 +27,22 @@ class SessionAnswerAPIView(CustomListCreateAPIView):
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsAssessmentFrontendAuthenticated,)
 
+    def post(self, request, *args, **kwargs):
+        if request.data.get('data'):
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                serializer = self.get_serializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response('Answer saved.', status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
+        return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class SessionProcessorAPIView(CustomListCreateAPIView):
     serializer_class = SessionProcessorSerializer
