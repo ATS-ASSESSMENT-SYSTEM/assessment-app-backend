@@ -1,6 +1,7 @@
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import serializers, status
 from django.db.models import Sum, Q
+from rest_framework.response import Response
 
 from result.models import Result, CategoryResult, SessionAnswer, AssessmentImages, \
     AssessmentMedia, AssessmentFeedback
@@ -123,13 +124,13 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                     SessionAnswer_instance.question_type = question_type
                     SessionAnswer_instance.save()
 
-                    return 'Answer saved.'
+                    return SessionAnswer_instance
                 new_SessionAnswer = SessionAnswer(**validated_data, is_correct=all_correct,
                                                   time_remaining=session_remaining_time,
                                                   mr_answers_id=mr_answers
                                                   )
                 new_SessionAnswer.save()
-                return 'Answer saved.'
+                return new_SessionAnswer
 
             if question_type == "Multi-choice":
 
@@ -141,12 +142,13 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                     SessionAnswer_instance.choice = choice
                     SessionAnswer_instance.question_type = 'Multi-choice'
                     SessionAnswer_instance.save()
-                    return 'Answer saved.'
+
+                    return SessionAnswer_instance
                 new_SessionAnswer = SessionAnswer(**validated_data, is_correct=is_correct_value,
                                                   time_remaining=session_remaining_time)
                 new_SessionAnswer.save()
 
-                return 'Answer saved.'
+                return new_SessionAnswer
 
             if question_type == "Open-ended":
 
@@ -161,7 +163,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                                                    category=validated_data.get(
                                                        'category'),
                                                    ).update(answer_text=answer_text)
-                    return 'Answer saved.'
+                    return SessionAnswer_instance
                 new_SessionAnswer = SessionAnswer(**validated_data,
                                                   time_remaining=session_remaining_time, question_type='Open-ended', )
 
@@ -174,7 +176,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                                                  )
                 new_SessionAnswer.save()
                 save_op_answer.save()
-                return 'Answer saved.'
+                return new_SessionAnswer
 
             raise serializers.ValidationError(
                 'Invalid data provided, please confirm and check again')
