@@ -214,7 +214,7 @@ class SessionProcessorSerializer(serializers.Serializer):
                     section_category = CategoryResult.objects.filter(
                         result=result, category=session_instance.category,
                     )
-                    if section_category and section_category.exissts():
+                    if section_category and section_category.exists():
                         raise serializers.ValidationError(
                             'This session has already been saved')
 
