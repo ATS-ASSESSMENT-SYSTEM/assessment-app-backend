@@ -1,6 +1,7 @@
 import base64
 import json
 
+from decouple import config
 from rest_framework.renderers import JSONRenderer
 from django.conf import settings as app_settings
 
@@ -13,8 +14,8 @@ from Cryptodome.Util.Padding import pad, unpad
 class CustomRenderer(JSONRenderer):
     def render(self, data, accepted_media_type=None, renderer_context=None):
 
-        key = "wjqy62fB+dwz2gyz4sMePe9u2RsMVIyuaA6wPgUeXjw="
-        iv = "gNyBAsNdWQEwHvbAm8g5Jg=="
+        key = config('KEY')
+        iv = config('IV')
         key_in_bytes = base64.b64decode(key)
         vector_in_bytes = base64.b64decode(iv)
         cipher = AES.new(key_in_bytes, AES.MODE_CBC, vector_in_bytes)
