@@ -2,6 +2,7 @@ import base64
 import json
 import hashlib
 
+from decouple import config
 from django.utils.deprecation import MiddlewareMixin
 
 import rest_framework.parsers
@@ -16,8 +17,8 @@ from Cryptodome.Util.Padding import pad, unpad
 
 def decrypt(data):
     b64 = json.loads(json.dumps(data))
-    key = "wjqy62fB+dwz2gyz4sMePe9u2RsMVIyuaA6wPgUeXjw="
-    iv = "gNyBAsNdWQEwHvbAm8g5Jg=="
+    key = config('KEY')
+    iv = config('IV')
     key_in_bytes = base64.b64decode(key)
     vector_in_bytes = base64.b64decode(iv)
     ct = base64.b64decode(b64)
