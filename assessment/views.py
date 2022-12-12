@@ -17,7 +17,7 @@ from assessment.serializers import AssessmentSerializer, CategorySerializer, App
     StartAssessmentSerializer, GetAssessmentForCandidateSerializer
 from rest_framework import generics, status
 from questions_category.models import Category, OpenEndedAnswer
-from result.models import SessionAnswer
+from result.models import SessionAnswer, Result, CategoryResult
 from utils.json_renderer import CustomRenderer
 
 from questions_category.views import MultipleFieldLookupMixin
@@ -203,6 +203,10 @@ class GetAssessmentForCandidateAPIView(CustomListCreateAPIView):
                             title__iexact=serializer.data.get('course'))
                         assessment = Assessment.active_objects.filter(application_type=application_type).latest(
                             'date_created')
+                        result = Result.objects.filter(candidate=serializer.data.get('candidate_id'), assessment=assessment)
+                        category_result = CategoryResult.objects.filter(result=result.first())
+                        if assessment.category.count() == category_result.count():
+                            return Response('Assessment has already been taken by the candidate.', status=status.HTTP_400_BAD_REQUEST)
                         assessment_data = AssessmentSerializer(assessment)
                         return Response(assessment_data.data,
                                         status=status.HTTP_200_OK)
