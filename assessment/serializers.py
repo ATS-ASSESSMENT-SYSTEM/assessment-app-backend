@@ -71,3 +71,4 @@ class StartAssessmentSerializer(serializers.Serializer):
 
 class GetAssessmentForCandidateSerializer(serializers.Serializer):
     course = serializers.CharField()
+    candidate_id = serializers.CharField()
