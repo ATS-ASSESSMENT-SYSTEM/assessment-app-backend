@@ -14,7 +14,7 @@ from app_core.permissions import IsApplicationBackendAuthenticated, IsAssessment
     IsAssessmentAdminAuthenticated, IsApplicationBackendOrIsAssessmentAdminAuthenticated
 from assessment.models import Assessment, ApplicationType, AssessmentSession
 from assessment.serializers import AssessmentSerializer, CategorySerializer, ApplicationTypeSerializer, \
-    StartAssessmentSerializer, GetAssessmentForCandidateSerializer
+    StartAssessmentSerializer, GetAssessmentForCandidateSerializer, CheckAssessmentDurationSerializer
 from rest_framework import generics, status
 from questions_category.models import Category, OpenEndedAnswer
 from result.models import SessionAnswer, Result, CategoryResult
@@ -203,14 +203,54 @@ class GetAssessmentForCandidateAPIView(CustomListCreateAPIView):
                             title__iexact=serializer.data.get('course'))
                         assessment = Assessment.active_objects.filter(application_type=application_type).latest(
                             'date_created')
-                        result = Result.objects.filter(candidate=serializer.data.get('candidate_id'), assessment=assessment)
-                        category_result = CategoryResult.objects.filter(result=result.first())
-                        if assessment.category.count() == category_result.count():
-                            return Response('Assessment has already been taken by the candidate.', status=status.HTTP_400_BAD_REQUEST)
                         assessment_data = AssessmentSerializer(assessment)
                         return Response(assessment_data.data,
                                         status=status.HTTP_200_OK)
                     except (ApplicationType.DoesNotExist, Assessment.DoesNotExist):
+                        raise ValidationError('ApplicationType or Assessment does not exist.')
+                return Response({'error': serializer.errors})
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
+        return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
+
+
+class CheckAssessmentDurationAPIView(CustomListCreateAPIView):
+    serializer_class = CheckAssessmentDurationSerializer
+    renderer_classes = (CustomRenderer,)
+    permission_classes = (IsAssessmentFrontendAuthenticated,)
+
+    def post(self, request):
+        if request.data.get('data'):
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                serializer = self.get_serializer(data=request.data)
+                if serializer.is_valid():
+                    try:
+                        application_type = ApplicationType.active_objects.get(
+                            title__iexact=serializer.data.get('course'))
+                        assessment = Assessment.active_objects.filter(application_type=application_type).latest(
+                            'date_created')
+                        assessment_session = AssessmentSession.active_objects.filter(assessment=assessment,
+                                                                                     candidate_id=serializer.data.get(
+                                                                                         'candidate_id')).order_by(
+                            'date_created')
+                        result = Result.objects.filter(assessment=assessment,
+                                                       candidate=serializer.data.get('candidate_id'))
+                        category_result = CategoryResult.objects.filter(result=result.first())
+                        if assessment_session.exists():
+                            if ((
+                                        timezone.now() - assessment_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                                return Response({'error': "Your assessment session has expired."},
+                                                status=status.HTTP_403_FORBIDDEN)
+                        if result.exists():
+                            if assessment.category.count() == category_result.count():
+                                return Response('Assessment has already been taken by the candidate.',
+                                                status=status.HTTP_400_BAD_REQUEST)
+
+                    except (ApplicationType.DoesNotExist, Assessment.DoesNotExist, AssessmentSession.DoesNotExist,
+                            Result.DoesNotExist, CategoryResult.DoesNotExist):
                         raise ValidationError('ApplicationType or Assessment does not exist.')
                 return Response({'error': serializer.errors})
             except ValueError:
