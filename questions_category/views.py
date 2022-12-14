@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
-from app_core.permissions import IsAssessmentAdminAuthenticated
+from app_core.permissions import IsAssessmentAdminAuthenticated, IsAssessmentFrontendOrIsAssessmentAdminAuthenticated
 from utils.json_renderer import CustomRenderer
 from questions_category.models import Category, Question, Choice
 from questions_category.serializers import CategorySerializer, QuestionSerializer, ChoiceSerializer
@@ -78,7 +78,7 @@ class QuestionListAPIView(ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['test_category', 'question_type', 'question_category']
     renderer_classes = (CustomRenderer,)
-    permission_classes = (IsAssessmentAdminAuthenticated,)
+    permission_classes = (IsAssessmentFrontendOrIsAssessmentAdminAuthenticated,)
 
     def get_queryset(self):
         category_pk = self.kwargs.get('pk')

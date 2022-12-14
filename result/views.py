@@ -27,6 +27,22 @@ class SessionAnswerAPIView(CustomListCreateAPIView):
     renderer_classes = (CustomRenderer,)
     permission_classes = (IsAssessmentFrontendAuthenticated,)
 
+    def post(self, request, *args, **kwargs):
+        if request.data.get('data'):
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                serializer = self.get_serializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response('Answer saved.', status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
+        return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class SessionProcessorAPIView(CustomListCreateAPIView):
     serializer_class = SessionProcessorSerializer
@@ -35,13 +51,17 @@ class SessionProcessorAPIView(CustomListCreateAPIView):
 
     def post(self, request):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                serializer = self.get_serializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -53,21 +73,25 @@ class AssessmentImagesAPIView(CustomListCreateAPIView):
 
     def post(self, request):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                session = AssessmentSession.objects.get(
-                    session_id=request.data['session_id'])
-                session_images = AssessmentImages(assessment=session.assessment,
-                                                  category=session.category,
-                                                  candidate=session.candidate_id,
-                                                  image=request.data.get('image')
-                                                  )
-                session_images.save()
-                print(session_images.image)
-                return Response("uploaded", status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                serializer = self.get_serializer(data=request.data)
+                if serializer.is_valid():
+                    session = AssessmentSession.objects.get(
+                        session_id=request.data['session_id'])
+                    session_images = AssessmentImages(assessment=session.assessment,
+                                                      category=session.category,
+                                                      candidate=session.candidate_id,
+                                                      image=request.data.get('image')
+                                                      )
+                    session_images.save()
+                    print(session_images.image)
+                    return Response("uploaded", status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -107,13 +131,17 @@ class ProcessOpenEndedAPIView(CustomListCreateAPIView):
 
     def post(self, request):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                serializer = self.get_serializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -124,11 +152,15 @@ class ResultInitializerAPIView(CustomListCreateAPIView):
 
     def post(self, request):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            serializer = self.get_serializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                serializer = self.get_serializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)

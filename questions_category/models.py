@@ -80,8 +80,8 @@ class Question(models.Model):
     class Meta:
         ordering = ('-created_date',)
 
-    def SessionAnswer(self):
-        return self.SessionAnswer_set.all()
+    def session_answer(self):
+        return self.sessionanswer_set.all()
 
     def choices(self):
         return self.choice_set.filter(is_delete=False)

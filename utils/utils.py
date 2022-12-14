@@ -2,6 +2,7 @@ import base64
 import json
 import hashlib
 
+from decouple import config
 from django.utils.deprecation import MiddlewareMixin
 
 import rest_framework.parsers
@@ -16,8 +17,8 @@ from Cryptodome.Util.Padding import pad, unpad
 
 def decrypt(data):
     b64 = json.loads(json.dumps(data))
-    key = "wjqy62fB+dwz2gyz4sMePe9u2RsMVIyuaA6wPgUeXjw="
-    iv = "gNyBAsNdWQEwHvbAm8g5Jg=="
+    key = config('KEY')
+    iv = config('IV')
     key_in_bytes = base64.b64decode(key)
     vector_in_bytes = base64.b64decode(iv)
     ct = base64.b64decode(b64)
@@ -33,9 +34,13 @@ class CustomListCreateAPIView(ListCreateAPIView):
 
     def post(self, request, *args, **kwargs):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            return super(CustomListCreateAPIView, self).post(request, *args, **kwargs)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                return super(CustomListCreateAPIView, self).post(request, *args, **kwargs)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -46,16 +51,24 @@ class CustomRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
 
     def put(self, request, *args, **kwargs):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            return super(CustomRetrieveUpdateDestroyAPIView, self).put(request, *args, **kwargs)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                return super(CustomRetrieveUpdateDestroyAPIView, self).put(request, *args, **kwargs)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, *args, **kwargs):
         if request.data.get('data'):
-            data = decrypt(request.data['data'])
-            request._full_data = data
-            return super(CustomRetrieveUpdateDestroyAPIView, self).patch(request, *args, **kwargs)
+            try:
+                data = decrypt(request.data['data'])
+                request._full_data = data
+                return super(CustomRetrieveUpdateDestroyAPIView, self).patch(request, *args, **kwargs)
+            except ValueError:
+                return Response('Padding incorrect, Encryption and Decryption key and vector must be same.',
+                                status=status.HTTP_400_BAD_REQUEST)
         return Response('Data must be encrypted', status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):

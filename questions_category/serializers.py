@@ -27,8 +27,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         choices = attrs.get('choices')
-        category_pk = self.context['request'].parser_context.get(
-            'kwargs').get('pk')
+        category_pk = self.context['view'].kwargs.get('pk')
         question_type = attrs.get('question_type')
         question_category = attrs.get('question_category')
 
@@ -70,8 +69,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            category_pk = self.context['request'].parser_context.get(
-                'kwargs').get('pk')
+            category_pk = self.context['view'].kwargs.get('pk')
             category = Category.active_objects.get(pk=category_pk)
             choices = validated_data.get('choices')
             if choices:
@@ -92,8 +90,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         choices = validated_data.get('choices')
         question_type = validated_data.get('question_type')
         question_text = validated_data.get('question_text')
-        category_pk = self.context['request'].parser_context.get(
-            'kwargs').get('test_category_id')
+        category_pk = self.context['view'].kwargs.get('test_category_id')
 
         if Question.active_objects.filter(question_text__iexact=question_text,
                                           test_category__pk=category_pk).exists():
