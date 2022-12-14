@@ -67,7 +67,7 @@ class AddCategoryToAssessmentAPIView(CustomRetrieveUpdateDestroyAPIView):
         except (Assessment.DoesNotExist, Category.DoesNotExist):
             raise ValidationError('Assessment or The Category does not exist.')
         else:
-            if category not in assessment.category.all():
+            if not assessment.category.filter(assessment__category=category).exists():
                 assessment.category.add(category)
                 assessment.save()
                 return Response({'status': 'Success', 'message': 'Category added successfully.'})
@@ -99,10 +99,10 @@ class GenerateRandomQuestions(CustomListCreateAPIView):
                         check_session = AssessmentSession.active_objects.filter(assessment=assessment,
                                                                                 candidate_id=serializer.data.get(
                                                                                     'candidate_id')).order_by(
-                            'date_created')
-                        if check_session.exists():
+                            'date_created').first()
+                        if check_session:
                             if ((
-                                        timezone.now() - check_session.first().date_created).total_seconds() / 3600) > assessment.total_duration:
+                                        timezone.now() - check_session.date_created).total_seconds() / 3600) > assessment.total_duration:
                                 return Response({'error': "Your assessment session has expired."},
                                                 status=status.HTTP_403_FORBIDDEN)
 
