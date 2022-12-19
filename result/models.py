@@ -30,7 +30,7 @@ class Result(models.Model):
         return f'{self.candidate} result for {self.assessment}'
 
     def category_info(self):
-        return self.CategoryResult_set.all()
+        return self.categoryresult_set.all()
 
     @property
     def assessment_category_count(self):
@@ -41,7 +41,7 @@ class Result(models.Model):
         category_check = CategoryResult.objects.filter(
             result_id=self.id, has_open_ended=True)
         if category_check.exists():
-            opa_check = OpenEndedAnswer.object.filter(category__in=category_check.values_list('pk')
+            opa_check = OpenEndedAnswer.objects.filter(category__in=category_check.values_list('pk')
                                                       ,is_marked=False)
             if opa_check.exists():
                 return 'Inconclusive'
@@ -112,7 +112,7 @@ class Result(models.Model):
                 )
                 get_or_create.save()
 
-        return q['score__sum'] + unfinished_category_answer.count()
+        return (q['score__sum'] or 0) + unfinished_category_answer.count()
 
     @property
     def duration(self):
@@ -120,8 +120,8 @@ class Result(models.Model):
             .order_by('date_created')
         print(sessions.first())
         return {
-            "time_started": sessions.first().date_created,
-            "time_ended": sessions.last().date_created
+            "time_started": str(sessions.first().date_created),
+            "time_ended": str(sessions.last().date_created)
         }
 
     @property
