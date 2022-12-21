@@ -47,6 +47,9 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                         > assessment.total_duration:
                     raise serializers.ValidationError("Your assessment session has expired.")
 
+            if question_type == 'Multi-choice' and not attrs.get('choice'):
+                raise serializers.ValidationError('Please provide choice for question.')
+
             if question_type == 'Multi-response':
                 mr_answers = attrs.get('mr_answers')
                 if not mr_answers:
