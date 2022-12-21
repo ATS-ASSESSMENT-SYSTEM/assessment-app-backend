@@ -99,8 +99,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                 mr_answers = validated_data.pop('mr_answers')
 
             session = validated_data.get("session")
-            choice = validated_data.get("choice")
-
+            choice = validated_data.pop("choice")
 
             sessionAnswer = SessionAnswer.objects.filter(**validated_data)
 
@@ -144,7 +143,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
                     SessionAnswer_instance.save()
 
                     return SessionAnswer_instance
-                new_SessionAnswer = SessionAnswer(**validated_data, is_correct=is_correct_value,
+                new_SessionAnswer = SessionAnswer(**validated_data, choice=choice, is_correct=is_correct_value,
                                                   time_remaining=session_remaining_time)
                 new_SessionAnswer.save()
 
@@ -476,9 +475,9 @@ class ResultInitializerSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         Result.objects.create(assessment=validated_data.get('assessment'),
-                             applicant_info=validated_data.get(
-                                 'applicant_info'),
-                             candidate=validated_data.get(
-                                 'applicant_info').applicantion_id
-                             )
+                              applicant_info=validated_data.get(
+                                  'applicant_info'),
+                              candidate=validated_data.get(
+                                  'applicant_info').applicantion_id
+                              )
         return validated_data
