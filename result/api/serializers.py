@@ -32,15 +32,6 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
             question = attrs.get('question')
             question_type = attrs.get('question_type')
 
-            if not assessment.category.filter(assessment__category=category).exists():
-                raise serializers.ValidationError('The category does not exist in the assessment.')
-
-            if not category.question_set.filter(is_delete=False).filter(test_category__question=question).exists():
-                raise serializers.ValidationError('The question does not exist in the category.')
-
-            if not question.choice_set.filter(is_delete=False).filter(question__choice=choice).exists():
-                raise serializers.ValidationError('The choice does not exist for the question.')
-
             if question_type not in ["Open-ended", 'Multi-choice', 'Multi-response']:
                 raise serializers.ValidationError("Invalid Question Type")
 
@@ -90,6 +81,15 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             if check_session.assessment != attrs.get('assessment'):
                 raise serializers.ValidationError('Invalid assessment ID')
+
+            if not assessment.category.filter(assessment__category=category).exists():
+                raise serializers.ValidationError('The category does not exist in the assessment.')
+
+            if not category.question_set.filter(is_delete=False).filter(test_category__question=question).exists():
+                raise serializers.ValidationError('The question does not exist in the category.')
+
+            if not question.choice_set.filter(is_delete=False).filter(question__choice=choice).exists():
+                raise serializers.ValidationError('The choice does not exist for the question.')
 
             if attrs.get('question_type') == 'Open-ended' and not attrs.get('answer_text'):
                 raise serializers.ValidationError(
