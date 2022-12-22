@@ -114,6 +114,7 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             session = validated_data.get("session")
             choice = validated_data.pop("choice")
+            is_correct = validated_data.pop('is_correct')
 
             sessionAnswer = SessionAnswer.objects.filter(**validated_data)
 
@@ -147,17 +148,17 @@ class SessionAnswerSerializer(serializers.ModelSerializer):
 
             if question_type == "Multi-choice":
 
-                is_correct_value = validated_data.pop('is_correct')
+
                 if sessionAnswer.exists():
                     SessionAnswer_instance = sessionAnswer.first()
-                    SessionAnswer_instance.is_correct = is_correct_value
+                    SessionAnswer_instance.is_correct = is_correct
                     SessionAnswer_instance.time_remaining = session_remaining_time
                     SessionAnswer_instance.choice = choice
                     SessionAnswer_instance.question_type = 'Multi-choice'
                     SessionAnswer_instance.save()
 
                     return SessionAnswer_instance
-                new_SessionAnswer = SessionAnswer(**validated_data, choice=choice, is_correct=is_correct_value,
+                new_SessionAnswer = SessionAnswer(**validated_data, choice=choice, is_correct=is_correct,
                                                   time_remaining=session_remaining_time)
                 new_SessionAnswer.save()
 
